@@ -56,44 +56,44 @@ token_type lex() {
       	
     	} while ((c=getchar()) != EOF && isalnum(c));
     	
-   	 	ungetc(c, stdin);
+		ungetc(c, stdin);
    	 	
-   	 	*p = '\0';
+		*p = '\0';
    	 	
    	 	
    	 	// check if any of these identifiers were actually meant
    	 	// to be reserved words instead. 
    	 	// -Tarek Medrano
    	 	
-   	 	if(strcmp(sbuf, "begin") == 0) return beginsym;
+		if(strcmp(sbuf, "begin") == 0) return beginsym;
    	 	
-   	 	if(strcmp(sbuf, "null") == 0) return nulsym;
+		if(strcmp(sbuf, "null") == 0) return nulsym;
    	 	
-   		if(strcmp(sbuf, "call") == 0) return callsym;
+		if(strcmp(sbuf, "call") == 0) return callsym;
    		
-   		if(strcmp(sbuf, "const") == 0) return constsym;
+		if(strcmp(sbuf, "const") == 0) return constsym;
    		
-   		if(strcmp(sbuf, "do") == 0) return dosym;
+		if(strcmp(sbuf, "do") == 0) return dosym;
    		
-   		if(strcmp(sbuf, "else") == 0) return elsesym;
+		if(strcmp(sbuf, "else") == 0) return elsesym;
    		
-   		if(strcmp(sbuf, "end") == 0) return endsym;
+		if(strcmp(sbuf, "end") == 0) return endsym;
    		
-   		if(strcmp(sbuf, "if") == 0) return ifsym;
+		if(strcmp(sbuf, "if") == 0) return ifsym;
    		
-   		if(strcmp(sbuf, "odd") == 0) return oddsym;
+		if(strcmp(sbuf, "odd") == 0) return oddsym;
    		
-   		if(strcmp(sbuf, "procedure") == 0) return procsym;
+		if(strcmp(sbuf, "procedure") == 0) return procsym;
    		
-   		if(strcmp(sbuf, "read") == 0) return readsym;
+		if(strcmp(sbuf, "read") == 0) return readsym;
    		
-   		if(strcmp(sbuf, "then") == 0) return thensym;
+		if(strcmp(sbuf, "then") == 0) return thensym;
    		
-   		if(strcmp(sbuf, "var") == 0) return varsym;
+		if(strcmp(sbuf, "var") == 0) return varsym;
    		
-   		if(strcmp(sbuf, "while") == 0) return whilesym;
+		if(strcmp(sbuf, "while") == 0) return whilesym;
    		
-   		if(strcmp(sbuf, "write") == 0) return writesym;
+		if(strcmp(sbuf, "write") == 0) return writesym;
    	 	
     	lval.id = sbuf;
     	
