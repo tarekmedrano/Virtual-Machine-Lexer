@@ -128,12 +128,15 @@ token_type lex() {
       		
     	case ')' :
 		 return rparentsym;
-      		
+      	
+		// Completed these operator tokens
+		// Tarek Medrano  
+		  	
     	case '/' :
 		 return slashsym;
      		
     	case '-' :
-    		return minussym;
+    	 return minussym;
    	    	
     	case ',' :
 		 return commasym;
