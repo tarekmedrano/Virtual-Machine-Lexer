@@ -118,48 +118,48 @@ token_type lex() {
 	switch (c) {
  	 	
     	case '+' :
-			return plussym;
+		 return plussym;
      		
-   	 	case '*' :
-			return multsym;
+		case '*' :
+		 return multsym;
    	    	
     	case '(' :
-			return lparentsym;
+		 return lparentsym;
       		
     	case ')' :
-			return rparentsym;
+		 return rparentsym;
       		
     	case '/' :
-			return slashsym;
+		 return slashsym;
      		
-   	 	case '-' :
-			return minussym;
+		case '-' :
+		 return minussym;
    	    	
     	case ',' :
-			return commasym;
+		 return commasym;
       		
     	case ';' :
-			return semicolonsym;
+		 return semicolonsym;
       		
     	case '.' :
-			return periodsym;
+		 return periodsym;
      		
-   	 	case '<' :
-			if((c=getchar()) == '=') return leqsym;
-			ungetc(c, stdin);
-			return lessym;     	    	
+		case '<' :
+		 if((c=getchar()) == '=') return leqsym;
+		 ungetc(c, stdin);
+		 return lessym;     	    	
    	    	
     	case '>' :
-			if((c=getchar()) == '=') return geqsym;
-			ungetc(c, stdin);  
-			return gtrsym;
+		 if((c=getchar()) == '=') return geqsym;
+		 ungetc(c, stdin);  
+		 return gtrsym;
 			
 		case '!' :
-			if((c=getchar()) == '=') return neqsym;
-			ungetc(c, stdin);  
+		 if((c=getchar()) == '=') return neqsym;
+		 ungetc(c, stdin);  
 				
     	case '=' :
-			return eqsym;				  	      		
+		 return eqsym;				  	      		
 
 	
 	  
