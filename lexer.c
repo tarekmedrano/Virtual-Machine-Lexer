@@ -161,7 +161,13 @@ token_type lex() {
 		 if((c=getchar()) == '=') return neqsym;
 		 ungetc(c, stdin);
 		 printf("illegal token \n");
-		 break;  
+		 break;
+		  
+    	case ':' :
+		 if((c=getchar()) == '=') return becomessym;
+		 ungetc(c, stdin);
+		 printf("illegal token \n");
+		 break; 		  
 				
     	case '=' :
 		 return eqsym;				  	      		
