@@ -1,10 +1,17 @@
-//Compiler Builder 15
-//Austin Dragone
-//Gabriela Fisher
-//Jerasimos Strakosha
-//Tarek Medrano
-//JonaThan Lacombe
+// Compiler Builder 15
+// Austin Dragone
+// Gabriela Fisher
+// Jerasimos Strakosha
+// Tarek Medrano
+// JonaThan Lacombe
 
+
+// 99% of this is taken from the example lexer, and we just need to add in the rest of the tokens
+// and format it so that the output matches what is expected.
+
+// nulsym, identsym, numbersym, plussym, multsym, lparentsym,
+// rparentsym are completed already.
+// our job is to split the other 26.
 
 
 #include <stdio.h>
@@ -26,6 +33,7 @@ union lval {
   char *id;
   char *num; 
 } lval; 
+
 
 token_type lex() {
   char c;
