@@ -31,7 +31,7 @@ typedef enum {  nulsym = 1, identsym, numbersym, plussym, minussym,
 
 union lval {
   char *id;
-  char *num; 
+  int num; 
 } lval; 
 
 
@@ -61,8 +61,6 @@ token_type lex() {
     } while ((c=getchar()) != EOF && isdigit(c));
     ungetc(c, stdin);
     *p = '\0';
-    lval.num = sbuf;
-    printf("%s", lval.num);
     return numbersym;  	
   }
 
@@ -89,7 +87,6 @@ main() {
   while ((tok=lex()) != nulsym) {
     printf("token type: %d", tok);
     if (tok == identsym) printf("%s", lval.id);
-    if (tok == numbersym) printf("%s", lval.num);
     printf("\n"); 
   }
 }
