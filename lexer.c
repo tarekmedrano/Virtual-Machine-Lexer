@@ -37,30 +37,28 @@ union lval {
 
 
 token_type lex() {
-  	char c;
+	char c;
   
-  // ignore space, tab, newline
-  	while ((c=getchar()) == ' ' || c== '\t' || c == '\n')
-   	 ;
-	
-  	 
-  	if (c == EOF) return nulsym;
+	// ignore space, tab, newline
+	while ((c=getchar()) == ' ' || c== '\t' || c == '\n')
+	;
 
-    // identifier
-  	if (isalpha(c)) {
-    	char sbuf[100], *p = sbuf;
+	if (c == EOF) return nulsym;
+
+	// identifier
+	if (isalpha(c)) {
+		char sbuf[100], *p = sbuf;
     	
-    	do {
-    		
-      	*p++ = c;
-      	
-    	} while ((c=getchar()) != EOF && isalnum(c));
-    	
+		do {
+ 
+		*p++ = c;
+
+		} while ((c=getchar()) != EOF && isalnum(c));
+	
 		ungetc(c, stdin);
-   	 	
+		
 		*p = '\0';
-   	 	
-   	 	
+		
    	 	// check if any of these identifiers were actually meant
    	 	// to be reserved words instead. 
    	 	// -Tarek Medrano
@@ -94,42 +92,74 @@ token_type lex() {
 		if(strcmp(sbuf, "while") == 0) return whilesym;
    		
 		if(strcmp(sbuf, "write") == 0) return writesym;
-   	 	
-    	lval.id = sbuf;
-    	
-    	return identsym;
-    	}
+		
+		lval.id = sbuf;
+		
+		return identsym;
+		}
   
-  	if (isdigit(c)){
+	if (isdigit(c)){
   		
-    	char sbuf[100], *p = sbuf;
+		char sbuf[100], *p = sbuf;
     	
-    	do {
-    		
-      	*p++ = c;
-      	
-    	} while ((c=getchar()) != EOF && isdigit(c));
+		do {
+		
+		*p++ = c;
+
+		} while ((c=getchar()) != EOF && isdigit(c));
     	
     	ungetc(c, stdin);
     	
     	*p = '\0';
     	
     	return numbersym;  	
-  	}
+	}
 
- 	 switch (c) {
+	switch (c) {
  	 	
     	case '+' :
-     		return plussym;
+			return plussym;
      		
    	 	case '*' :
-   	    	return multsym;
+			return multsym;
    	    	
     	case '(' :
-      		return lparentsym;
+			return lparentsym;
       		
     	case ')' :
-      		return rparentsym;
+			return rparentsym;
+      		
+    	case '/' :
+			return slashsym;
+     		
+   	 	case '-' :
+			return minussym;
+   	    	
+    	case ',' :
+			return commasym;
+      		
+    	case ';' :
+			return semicolonsym;
+      		
+    	case '.' :
+			return periodsym;
+     		
+   	 	case '<' :
+			if((c=getchar()) == '=') return leqsym;
+			ungetc(c, stdin);
+			return lessym;     	    	
+   	    	
+    	case '>' :
+			if((c=getchar()) == '=') return geqsym;
+			ungetc(c, stdin);  
+			return gtrsym;
+			
+		case '!' :
+			if((c=getchar()) == '=') return neqsym;
+			ungetc(c, stdin);  
+				
+    	case '=' :
+			return eqsym;				  	      		
 
 	
 	  
