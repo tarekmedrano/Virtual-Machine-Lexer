@@ -18,6 +18,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+
+
 // List of the tokens we are responsible for handling
 
 typedef enum {  nulsym = 1, identsym, numbersym, plussym, minussym,
@@ -27,8 +29,6 @@ typedef enum {  nulsym = 1, identsym, numbersym, plussym, minussym,
 	whilesym, dosym, callsym, constsym, varsym, procsym, writesym,
 	readsym , elsesym} token_type;
 
-char *keyword[] = {"null", "begin", "call", "const", "do", "else", "end", "if", "odd", "procedure", "read",
-	"then", "var", "while", "write"};
 
 union lval {
 	char *id;
@@ -49,26 +49,76 @@ token_type lex() {
     // identifier
   	if (isalpha(c)) {
     	char sbuf[100], *p = sbuf;
+    	
     	do {
+    		
       	*p++ = c;
+      	
     	} while ((c=getchar()) != EOF && isalnum(c));
+    	
    	 	ungetc(c, stdin);
+   	 	
    	 	*p = '\0';
+   	 	
+   	 	
+   	 	// check if any of these identifiers were actually meant
+   	 	// to be reserved words instead. 
+   	 	// -Tarek Medrano
+   	 	
+   	 	if(strcmp(sbuf, "begin") == 0) return beginsym;
+   	 	
+   	 	if(strcmp(sbuf, "null") == 0) return nulsym;
+   	 	
+   		if(strcmp(sbuf, "call") == 0) return callsym;
+   		
+   		if(strcmp(sbuf, "const") == 0) return constsym;
+   		
+   		if(strcmp(sbuf, "do") == 0) return dosym;
+   		
+   		if(strcmp(sbuf, "else") == 0) return elsesym;
+   		
+   		if(strcmp(sbuf, "end") == 0) return endsym;
+   		
+   		if(strcmp(sbuf, "if") == 0) return ifsym;
+   		
+   		if(strcmp(sbuf, "odd") == 0) return oddsym;
+   		
+   		if(strcmp(sbuf, "procedure") == 0) return procsym;
+   		
+   		if(strcmp(sbuf, "read") == 0) return readsym;
+   		
+   		if(strcmp(sbuf, "then") == 0) return thensym;
+   		
+   		if(strcmp(sbuf, "var") == 0) return varsym;
+   		
+   		if(strcmp(sbuf, "while") == 0) return whilesym;
+   		
+   		if(strcmp(sbuf, "write") == 0) return writesym;
+   	 	
     	lval.id = sbuf;
+    	
     	return identsym;
- 	}
+    	}
   
   	if (isdigit(c)){
+  		
     	char sbuf[100], *p = sbuf;
+    	
     	do {
+    		
       	*p++ = c;
+      	
     	} while ((c=getchar()) != EOF && isdigit(c));
+    	
     	ungetc(c, stdin);
+    	
     	*p = '\0';
+    	
     	return numbersym;  	
   	}
 
  	 switch (c) {
+ 	 	
     	case '+' :
      		return plussym;
      		
