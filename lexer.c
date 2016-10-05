@@ -45,19 +45,20 @@ void inputChar( char c );
 
 //Lex the input and output it before comments are removed
 token_type lex() {
-	char c;
 	
 	//Check for comment start
-	char d;
+	char c, d;
 	if( (c = getchar()) == '/' ) {
 		if( (d = getchar()) == '*' ) {
+			printf("\ncomment started\n");
 			if( !startComment() ) {
-				tokenSym( nulsym );
 				return nulsym; //EOF while in comment
 			}
+		} else {
+		ungetc(d, stdin);
+		ungetc(c, stdin);
 		}
 	} else {
-		ungetc(d, stdin);
 		ungetc(c, stdin);
 	}
 	
@@ -82,10 +83,7 @@ token_type lex() {
 	}
 	
 	//End of the file, stop lexxing
-	if (c == EOF) {
-		tokenSym( nulsym );
-		return nulsym;
-	}
+	if (c == EOF) return nulsym;
 
 	// identifier or reserved word
 	if (isalpha(c)) {
@@ -95,6 +93,8 @@ token_type lex() {
 		do {
 			
     	printf("%c", c);
+		input[pointer] = c;
+		pointer++;
 		*p++ = c;
 
 		} while ((c=getchar()) != EOF && isalnum(c));
@@ -107,84 +107,38 @@ token_type lex() {
 		// to be reserved words instead. 
 		// -Tarek Medrano
 
-		if(strcmp(sbuf, "begin") == 0) {
-			tokenSym( beginsym );
-			return beginsym;
-		}
+		if(strcmp(sbuf, "begin") == 0) return beginsym;
 
-		if(strcmp(sbuf, "null") == 0) {
-			tokenSym( nulsym );
-			return nulsym;
-		}
+		if(strcmp(sbuf, "null") == 0) return nulsym;
 
-		if(strcmp(sbuf, "call") == 0) {
-			tokenSym( callsym );
-			return callsym;
-		}
+		if(strcmp(sbuf, "call") == 0) return callsym;
 
-		if(strcmp(sbuf, "const") == 0) {
-			tokenSym( constsym );
-			return constsym;
-		}
+		if(strcmp(sbuf, "const") == 0) return constsym;
 
-		if(strcmp(sbuf, "do") == 0) {
-			tokenSym( dosym );
-			return dosym;
-		}
+		if(strcmp(sbuf, "do") == 0) return dosym;
 
-		if(strcmp(sbuf, "else") == 0) {
-			tokenSym( elsesym );
-			return elsesym;
-		}
+		if(strcmp(sbuf, "else") == 0) return elsesym;
 
-		if(strcmp(sbuf, "end") == 0) {
-			tokenSym( endsym );
-			return endsym;
-		}
+		if(strcmp(sbuf, "end") == 0) return endsym;
 
-		if(strcmp(sbuf, "if") == 0) {
-			tokenSym( ifsym );
-			return ifsym;
-		}
+		if(strcmp(sbuf, "if") == 0) return ifsym;
 
-		if(strcmp(sbuf, "odd") == 0) {
-			tokenSym( oddsym );
-			return oddsym;
-		}
+		if(strcmp(sbuf, "odd") == 0) return oddsym;
 
-		if(strcmp(sbuf, "procedure") == 0) {
-			tokenSym( procsym );
-			return procsym;
-		}
+		if(strcmp(sbuf, "procedure") == 0) return procsym;
 
-		if(strcmp(sbuf, "read") == 0) {
-			tokenSym( readsym );
-			return readsym;
-		}
+		if(strcmp(sbuf, "read") == 0) return readsym;
 
-		if(strcmp(sbuf, "then") == 0) {
-			tokenSym( thensym );
-			return thensym;
-		}
+		if(strcmp(sbuf, "then") == 0) return thensym;
 
-		if(strcmp(sbuf, "var") == 0) {
-			tokenSym( varsym );
-			return varsym;
-		}
+		if(strcmp(sbuf, "var") == 0) return varsym;
 
-		if(strcmp(sbuf, "while") == 0) {
-			tokenSym( whilesym );
-			return whilesym;
-		}
+		if(strcmp(sbuf, "while") == 0) return whilesym;
 
-		if(strcmp(sbuf, "write") == 0) {
-			tokenSym( writesym );
-			return writesym;
-		}
+		if(strcmp(sbuf, "write") == 0) return writesym;
 
 		lval.id = sbuf;
 		
-		tokenSym( identsym );
 		return identsym;
 	}
 	
@@ -192,7 +146,6 @@ token_type lex() {
 	if (isdigit(c)){
   		
 		char sbuf[100], *p = sbuf;
-		printf("%c", c);
 
 		do {
 			
@@ -207,7 +160,6 @@ token_type lex() {
 
 		*p = '\0';
 		
-		tokenSym( numbersym );
 		return numbersym;  	
 	}
 	
@@ -219,28 +171,24 @@ token_type lex() {
 		 input[pointer] = '+';
 		 pointer++;
 		 
-		 tokenSym( plussym );
 		 return plussym;
      		
     	case '*' :
 		 input[pointer] = '*';
 		 pointer++;
 		 
-		 tokenSym( multsym );
 		 return multsym;
    	    	
     	case '(' :
 		 input[pointer] = '(';
 		 pointer++;
 		 
-		 tokenSym( lparentsym );
 		 return lparentsym;
       		
     	case ')' :
 		 input[pointer] = ')';
 		 pointer++;
 		 
-		 tokenSym( rparentsym );
 		 return rparentsym;
       	
 		// Completed these operator tokens
@@ -250,35 +198,30 @@ token_type lex() {
 		 input[pointer] = '/';
 		 pointer++;
 		 
-		 tokenSym( slashsym );
 		 return slashsym;
      		
     	case '-' :
 		 input[pointer] = '-';
 		 pointer++;
 		 
-		 tokenSym( minussym );
     	 return minussym;
    	    	
     	case ',' :
 		 input[pointer] = ',';
 		 pointer++;
 		 
-		 tokenSym( commasym );
 		 return commasym;
       		
     	case ';' :
 		 input[pointer] = ';';
 		 pointer++;
 		 
-		 tokenSym( semicolonsym );
 		 return semicolonsym;
       		
     	case '.' :
 		 input[pointer] = '.';
 		 pointer++;
 		 
-		 tokenSym( periodsym );
 		 return periodsym;
      		
     	case '<' :
@@ -290,11 +233,9 @@ token_type lex() {
 			 input[pointer] = '=';
 			 pointer++;
 			 
-			 tokenSym( leqsym );
 			 return leqsym;
 		 }
 		 ungetc(c, stdin);
-		 tokenSym( lessym );
 		 return lessym;     	    	
    	    	
     	case '>' :
@@ -306,12 +247,10 @@ token_type lex() {
 			 input[pointer] = '=';
 			 pointer++;
 			 
-			 tokenSym( geqsym );
 			 return geqsym;
 		 }
 		 ungetc(c, stdin);
 		 
-		 tokenSym( gtrsym );
 		 return gtrsym;
 			
     	case '!' :
@@ -323,7 +262,6 @@ token_type lex() {
 			 input[pointer] = '=';
 			 pointer++;
 			 
-			 tokenSym( neqsym );
 			 return neqsym;
 		 }
 		 ungetc(c, stdin);
@@ -339,7 +277,6 @@ token_type lex() {
 			 input[pointer] = '=';
 			 pointer++;
 			 
-			 tokenSym( becomessym );
 			 return becomessym;
 		 }
 		 ungetc(c, stdin);
@@ -350,13 +287,11 @@ token_type lex() {
 		 input[pointer] = '=';
 		 pointer++;
 		 
-		 tokenSym( eqsym );
 		 return eqsym;
 		 
 		 
 		 
 		default  :
-			printf("%c", c);
 			input[pointer] = ' ';
 			pointer++;
 			//printf("illegal token\n");
@@ -378,7 +313,6 @@ int startComment(){
 	char c, d;
 	while( (c=getchar()) != EOF ) {
 		
-		printf(".");
 		//Exit comment if we find */
 		if( c  == '*' ) {
 			if( (d=getchar()) == '/' ) {
@@ -445,7 +379,7 @@ void inputChar( char c ){
 int main() {
   	
 	tokens = malloc( sizeof(char)*2500 );
-	input = malloc( sizeof(int)*2500 );
+	input = malloc( sizeof(char)*2500 );
 	t_pointer = 0;
 	pointer = 0;
 	token_type tok;
@@ -454,7 +388,7 @@ int main() {
   	printf("\nsource code:\n-----------\n");
 	while ((tok=lex()) != nulsym) {
 		
-		//printf("%d", tok);
+		tokenSym( tok );
 		
 		//Print tokens later
 		tokens[t_pointer] = (char) tok;
@@ -463,7 +397,6 @@ int main() {
 		if (tok == identsym) 
 			; //printf(" %s", lval.id);
     
-		//printf("\n");
 		tokens[t_pointer] = '\n';
 		t_pointer++;
 	}
@@ -472,20 +405,21 @@ int main() {
 	
 	
 	//PRINT WITHOUT COMMENTS
-	int i;
   	printf("source code without comments:\n-----------------------------\n");
+	int i = 0;
 	char c = input[0];
-	/*while( c != '\0') {
+	while( c != '\0') {
 		
 		printf("%c", c);
 		i++;
 		c = input[i];
-	}*/
+	}
 	
 	
 	//PRINT TOKENS
 	//needs fixing, causes segmentation fault
 	printf("\n\ntokens:\n-------\n");
+	i = 0;
 	/*c = tokens[0];
 	while( c != '\0' ) {
 		
