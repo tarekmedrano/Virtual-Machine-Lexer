@@ -5,14 +5,6 @@
 // Tarek Medrano
 // Jonathan Lacombe
 
-
-// 99% of this is taken from the example lexer, and we just need to add in the rest of the tokens
-// and format it so that the output matches what is expected.
-
-// nulsym, identsym, numbersym, plussym, multsym, lparentsym,
-// rparentsym are completed already.
-// our job is to split the other 26.
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -31,6 +23,8 @@ union lval {
 	int num; 
 } lval; 
 
+//int *values;
+//int v_pointer;
 char *tokens;
 int t_pointer;
 char *input;
@@ -39,30 +33,14 @@ int pointer;
 token_type lex();
 int startComment();
 void tokenSym( token_type t );
-void tokenIllegal();
 void inputChar( char c );
 
 
 //Lex the input and output it before comments are removed
 token_type lex() {
 	
-	//Check for comment start
-	char c, d;
-	if( (c = getchar()) == '/' ) {
-		if( (d = getchar()) == '*' ) {
-			printf("\ncomment started\n");
-			if( !startComment() ) {
-				return nulsym; //EOF while in comment
-			}
-		} else {
-		ungetc(d, stdin);
-		ungetc(c, stdin);
-		}
-	} else {
-		ungetc(c, stdin);
-	}
-	
 	//ignore space, tab, newline
+	char c;
 	while ((c=getchar()) == ' ' || c == '\t' || c == '\n') {
 		
 		if( c == ' ' ) {
@@ -81,6 +59,19 @@ token_type lex() {
 			pointer++;
 		}
 	}
+	
+	//Check for comment start
+	char d;
+	if( c == '/' ) {
+		if( (d = getchar()) == '*' ) {
+			if( !startComment() ) {
+				return nulsym; //EOF while in comment
+			}
+			c = getchar();
+		} else
+			ungetc(d, stdin);
+	}
+	
 	
 	//End of the file, stop lexxing
 	if (c == EOF) return nulsym;
@@ -166,65 +157,65 @@ token_type lex() {
 	//Reserved symbol or illegal token
 	printf("%c", c);
 	switch (c) {
- 	 	
-    	case '+' :
+		
+		case '+' :
 		 input[pointer] = '+';
 		 pointer++;
 		 
 		 return plussym;
-     		
-    	case '*' :
+			
+		case '*' :
 		 input[pointer] = '*';
 		 pointer++;
 		 
 		 return multsym;
-   	    	
-    	case '(' :
+			
+		case '(' :
 		 input[pointer] = '(';
 		 pointer++;
 		 
 		 return lparentsym;
-      		
-    	case ')' :
+			
+		case ')' :
 		 input[pointer] = ')';
 		 pointer++;
 		 
 		 return rparentsym;
-      	
+		
 		// Completed these operator tokens
 		// Tarek Medrano  
-		  	
-    	case '/' :
+			
+		case '/' :
 		 input[pointer] = '/';
 		 pointer++;
 		 
 		 return slashsym;
-     		
-    	case '-' :
+			
+		case '-' :
 		 input[pointer] = '-';
 		 pointer++;
 		 
-    	 return minussym;
-   	    	
-    	case ',' :
+		 return minussym;
+			
+		case ',' :
 		 input[pointer] = ',';
 		 pointer++;
 		 
 		 return commasym;
-      		
-    	case ';' :
+			
+		case ';' :
 		 input[pointer] = ';';
 		 pointer++;
 		 
 		 return semicolonsym;
-      		
-    	case '.' :
+			
+		case '.' :
 		 input[pointer] = '.';
 		 pointer++;
 		 
 		 return periodsym;
-     		
-    	case '<' :
+			
+		case '<' :
 		 input[pointer] = '<';
 		 pointer++;
 		 
@@ -237,8 +228,8 @@ token_type lex() {
 		 }
 		 ungetc(c, stdin);
 		 return lessym;     	    	
-   	    	
-    	case '>' :
+			
+		case '>' :
 		 input[pointer] = '>';
 		 pointer++;
 		 
@@ -253,7 +244,7 @@ token_type lex() {
 		 
 		 return gtrsym;
 			
-    	case '!' :
+		case '!' :
 		 input[pointer] = '!';
 		 pointer++;
 		 
@@ -268,7 +259,7 @@ token_type lex() {
 		 //printf("illegal token \n");
 		 break;
 		  
-    	case ':' :
+		case ':' :
 		 input[pointer] = ':';
 		 pointer++;
 		 
@@ -283,7 +274,7 @@ token_type lex() {
 		 //printf("illegal token \n");
 		 break; 		  
 				
-    	case '=' :
+		case '=' :
 		 input[pointer] = '=';
 		 pointer++;
 		 
@@ -292,11 +283,10 @@ token_type lex() {
 		 
 		 
 		default  :
-			input[pointer] = ' ';
+			input[pointer] = c;
 			pointer++;
 			//printf("illegal token\n");
 	}
-	
 }
 
 
@@ -309,7 +299,7 @@ int startComment(){
 	printf("/"); input[pointer] = ' '; pointer++;
 	printf("*"); input[pointer] = ' '; pointer++;
 	
-	//Continue unless EOF
+	//Continue unless EOF or if we find */
 	char c, d;
 	while( (c=getchar()) != EOF ) {
 		
@@ -319,9 +309,10 @@ int startComment(){
 				printf("*"); input[pointer] = ' '; pointer++;
 				printf("/"); input[pointer] = ' '; pointer++;
 				return 1;
+			} else {
+				ungetc(d, stdin);
 			}
 		}
-		ungetc(d, stdin);
 		
 		//Tab is different since it takes multiple spaces
 		if( c == '\t' ) {
@@ -330,17 +321,16 @@ int startComment(){
 			pointer++;
 		}
 		
-		/*//I don't think we need this, but is here just incase
-		else if( c == '\n' ) {
-			input[pointer] = '\n';
-			pointer++;
-		}
-		*/
+		//I don't think we need this, but is here just incase
+		else if( c == '\n' )
+			printf("\n");
 		
 		//Otherwise, we just copy a space to input and continue
-		printf("%c", c); 
-		input[pointer] = ' ';
-		pointer++;
+		else {
+			printf("%c", c); 
+			input[pointer] = ' ';
+			pointer++;
+		}
 		
 	}
 	
@@ -353,15 +343,6 @@ int startComment(){
 void tokenSym( token_type t ) {
 	tokens[t_pointer] = (char) t;
 	t_pointer++;
-}
-
-
-//Replace all "printf("illegal token\n");" in lex() with this function call 
-void tokenIllegal() {
-	
-	//loop through the string "illegal token\n" and put each char in token[]
-	//(including '\n') and increment t_pointer
-	
 }
 
 
@@ -378,8 +359,10 @@ void inputChar( char c ){
 
 int main() {
   	
+	//values = malloc( sizeof(int)*2500 );
 	tokens = malloc( sizeof(char)*2500 );
 	input = malloc( sizeof(char)*2500 );
+	//v_pointer = 0;
 	t_pointer = 0;
 	pointer = 0;
 	token_type tok;
