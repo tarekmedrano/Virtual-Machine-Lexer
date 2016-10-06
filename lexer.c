@@ -1,3 +1,4 @@
+
 // Compiler Builder 15
 // Austin Dragone
 // Gabriela Fisher
@@ -38,6 +39,7 @@ void inputChar( char c );
 token_type lex() {
 	char d;
 	int saw_comment = 0;
+	
 	//ignore space, tab, newline
 	char c;
 	while ((c=getchar()) == ' ' || c == '\t' || c == '\n') {
@@ -151,7 +153,7 @@ token_type lex() {
 
 		if(strcmp(sbuf, "write") == 0) return writesym;
 
-		lval.id = sbuf;
+//		lval.id = sbuf;
 		
 		return identsym;
 	}
@@ -294,7 +296,7 @@ token_type lex() {
 			 return becomessym;
 		 }
 		 ungetc(c, stdin);
-		 //printf("illegal token \n");
+		 //printf("illegal token\n");
 		 break; 		  
 				
 		case '=' :
@@ -308,7 +310,7 @@ token_type lex() {
 		default  :
 			input[pointer] = c;
 			pointer++;
-			//printf("illegal token\n");
+			printf("illegal token\n");
 	}
 }
 
@@ -364,7 +366,7 @@ int startComment(){
 
 //This occured a lot so I made a function for it to make things look cleaner
 void tokenSym( token_type t ) {
-	tokens[t_pointer] = (char) t;
+	tokens[t_pointer] = t;
 	t_pointer++;
 }
 
@@ -379,7 +381,13 @@ void inputChar( char c ){
 	pointer++;
 	
 }
-// when printing out the tokens this decides which is a full word so it will print out var instead v a r on different lines
+
+
+// when printing out the tokens this decides which is a full word so 
+// it will print out var instead v a r on different lines
+// -------------
+// We want this to print any input over again and then place the token type next to it.
+// -Tarek
 int wordPrint(char c, int p){
 	int i = p;
 	while (c == ' ' || c== '\t' || c == '\n'){
@@ -388,16 +396,14 @@ int wordPrint(char c, int p){
 	 
 	if (c == '\0') return i;
 
-	if (isalpha(c)) {
-		while(isalpha(c) || isdigit(c) )
+	while((isgraph(c)))
 		{
 			printf("%c", c);
 			c = input[++i];
-			if (c == '\0') return i;
 		}
-		// print out tokentyp
-		// printf("/t/t   /n",);
-	}
+		
+		printf("\t\t");
+	
 
 	return i;
 }
@@ -417,17 +423,9 @@ int main() {
   	printf("\nsource code:\n-----------\n");
 	while ((tok=lex()) != nulsym) {
 		
-		tokenSym( tok );
 		
-		//Print tokens later
-		tokens[t_pointer] = (char) tok;
-		t_pointer++;
-    
-		if (tok == identsym) 
-			; //printf(" %s", lval.id);
-    
-		tokens[t_pointer] = '\n';
-		t_pointer++;
+		tokenSym( tok );
+
 	}
 	printf("\n\n");
 	input[pointer] = '\0';
@@ -446,14 +444,15 @@ int main() {
 	
 	
 	//PRINT TOKENS
-	//Needs completed
+	// - Tarek
 	printf("\n\ntokens:\n-------\n");
-	i = 0;
+	int j;
+	i=0;
 	c = input[0];
-	while( c != '\0') {
+	for(j=0; j< t_pointer; j++){
 	
 		i = wordPrint(c,i);
-		//printf("%c\t\t    \n", c);
+		printf("%d \n", tokens[j]);
 		i++;
 		c = input[i];
 		
