@@ -1,0 +1,30 @@
+Tarek
+
+Organized the outline of first draft 
+Worked on functions main, wordPrint, lex
+Helped revise main, lex, and inputChar
+Helped token output print correctly
+Ran test cases
+
+Austin
+
+Worked on functions startComment, inputChar, tokenSym, and inputGuider
+Helped revise functions lex, wordPrint, and main
+Helped input and input w/o comments print correctly
+Ran test cases
+
+Gabriela
+
+Helped revise functions lex, wordPrint, and main
+Helped token output print correctly
+
+Jerasimos
+
+Helped revise functions main and lex
+Helped token output print correctly
+
+Jonahan
+
+Helped revise functions lex and main
+Implemented argument flags and reading input as command line arguments
+
