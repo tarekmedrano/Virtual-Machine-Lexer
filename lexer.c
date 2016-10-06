@@ -36,7 +36,8 @@ void inputChar( char c );
 
 //Lex the input and output it before comments are removed
 token_type lex() {
-	
+	char d;
+	int saw_comment = 0;
 	//ignore space, tab, newline
 	char c;
 	while ((c=getchar()) == ' ' || c == '\t' || c == '\n') {
@@ -59,8 +60,8 @@ token_type lex() {
 	}
 	
 	//Check for comment start
-	char d;
-	int saw_comment = 0;
+	d;
+	saw_comment = 0;
 	if( c == '/' ) {
 		if( (d = getchar()) == '*' ) {
 			saw_comment = 1;
@@ -316,13 +317,13 @@ token_type lex() {
 //Exit if we see */
 //-Austin
 int startComment(){
-	
+	char c, d;
 	//To make up for the start of the comment /* 
 	printf("/"); input[pointer] = ' '; pointer++;
 	printf("*"); input[pointer] = ' '; pointer++;
 	
 	//Continue unless EOF or if we find */
-	char c, d;
+	
 	while( (c=getchar()) != EOF ) {
 		
 		//Exit comment if we find */
@@ -339,7 +340,7 @@ int startComment(){
 		//Tab is different since it takes multiple spaces
 		if( c == '\t' ) {
 			printf("\t"); 
-			input[pointer] == '\t';
+			input[pointer] = '\t';
 			pointer++;
 		}
 		
@@ -373,19 +374,44 @@ void tokenSym( token_type t ) {
 //	input[pointer] = ___;
 //	pointer++;
 void inputChar( char c ){
-	
 	//put c in input[] and increment pointer variable
+	input[pointer] = c;
+	pointer++;
 	
 }
+// when printing out the tokens this decides which is a full word so it will print out var instead v a r on different lines
+int wordPrint(char c, int p){
+	int i = p;
+	while (c == ' ' || c== '\t' || c == '\n'){
+		c = input[++i];
+	}
+	 
+	if (c == '\0') return i;
 
+	if (isalpha(c)) {
+		while(isalpha(c) || isdigit(c) )
+		{
+			printf("%c", c);
+			c = input[++i];
+			if (c == '\0') return i;
+		}
+		// print out tokentyp
+		// printf("/t/t   /n",);
+	}
+
+	return i;
+}
 
 int main() {
-  	
+  	int i = 0;
+	char c;
+	token_type tok;
+
 	tokens = malloc( sizeof(char)*2500 );
 	input = malloc( sizeof(char)*2500 );
 	t_pointer = 0;
 	pointer = 0;
-	token_type tok;
+
   	
 	//Lex the input and print the input
   	printf("\nsource code:\n-----------\n");
@@ -409,8 +435,8 @@ int main() {
 	
 	//PRINT WITHOUT COMMENTS
   	printf("source code without comments:\n-----------------------------\n");
-	int i = 0;
-	char c = input[0];
+	i = 0;
+	c = input[0];
 	while( c != '\0') {
 		
 		printf("%c", c);
@@ -422,16 +448,20 @@ int main() {
 	//PRINT TOKENS
 	//Needs completed
 	printf("\n\ntokens:\n-------\n");
+	i = 0;
+	c = input[0];
+	while( c != '\0') {
 	
+		i = wordPrint(c,i);
+		//printf("%c\t\t    \n", c);
+		i++;
+		c = input[i];
+		
+	}
+
+
 	free(input);
 	free(tokens);
 	
 	return 0;
 }
-
-
-
-
-
-
-
