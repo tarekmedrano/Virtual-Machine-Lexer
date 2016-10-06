@@ -23,8 +23,6 @@ union lval {
 	int num; 
 } lval; 
 
-//int *values;
-//int v_pointer;
 char *tokens;
 int t_pointer;
 char *input;
@@ -62,8 +60,10 @@ token_type lex() {
 	
 	//Check for comment start
 	char d;
+	int saw_comment = 0;
 	if( c == '/' ) {
 		if( (d = getchar()) == '*' ) {
+			saw_comment = 1;
 			if( !startComment() ) {
 				return nulsym; //EOF while in comment
 			}
@@ -72,6 +72,28 @@ token_type lex() {
 			ungetc(d, stdin);
 	}
 	
+	//Check for white space again after comment 
+	if( saw_comment ) {
+		ungetc(c, stdin);
+		while ( (c=getchar()) == ' ' || c == '\t' || c == '\n') {
+			
+			if( c == ' ' ) {
+				printf(" ");
+				input[pointer] = c;
+				pointer++;
+			}
+			else if( c == '\t' ) {
+				printf("\t");
+				input[pointer] = '\t';
+				pointer++;
+			}
+			else if( c == '\n' ) {
+				printf("\n");
+				input[pointer] = c;
+				pointer++;
+			}
+		}
+	}
 	
 	//End of the file, stop lexxing
 	if (c == EOF) return nulsym;
@@ -359,10 +381,8 @@ void inputChar( char c ){
 
 int main() {
   	
-	//values = malloc( sizeof(int)*2500 );
 	tokens = malloc( sizeof(char)*2500 );
 	input = malloc( sizeof(char)*2500 );
-	//v_pointer = 0;
 	t_pointer = 0;
 	pointer = 0;
 	token_type tok;
@@ -400,17 +420,13 @@ int main() {
 	
 	
 	//PRINT TOKENS
-	//needs fixing, causes segmentation fault
+	//Needs completed
 	printf("\n\ntokens:\n-------\n");
-	i = 0;
-	/*c = tokens[0];
-	while( c != '\0' ) {
-		
-		printf("%c", c);
-		i++;
-		c = tokens[i];
-	}*/
 	
+	free(input);
+	free(tokens);
+	
+	return 0;
 }
 
 
