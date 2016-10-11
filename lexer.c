@@ -46,27 +46,27 @@ char source_getc();
 void source_ungetc(char c);
 
 void readFile() {
-    int index = 0;
-    while (1) {
-        char c = fgetc(file);
-        if (c==EOF) {
-            source[index] = '\0';
-            break;
-        }
-        source[index] = c;
-        index++;
-    }
+	int index = 0;
+	while (1) {
+		char c = fgetc(file);
+		if (c==EOF) {
+			source[index] = '\0';
+			break;
+		}
+		source[index] = c;
+		index++;
+	}
 }
 
 char source_getc() {
-    char c = source[sourceIndex];
-    sourceIndex++;
-    return c;
+	char c = source[sourceIndex];
+	sourceIndex++;
+	return c;
 }
 
 void source_ungetc(char c) {
-    sourceIndex--;
-    source[sourceIndex] = c;
+	sourceIndex--;
+	source[sourceIndex] = c;
 }
 
 //Lex the input and removes comments
@@ -495,34 +495,31 @@ void inputGuider( int i ) {
 
 int main(int argc, char** argv) {
 
-    char* fname = NULL;
-    int printSource = 0;
-    int printClean = 0;
+	char* fname = NULL;
+	int printSource = 0;
+	int printClean = 0;
+
+	argc--; *argv++; //dont need first argument (executable name)
+	while (argc-- > 0) {
+		char* arg = *argv++;
+		if (strcmp(arg,"--source")==0)
+			printSource = 1;
+		else if (strcmp(arg,"--clean")==0)
+			printClean = 1;
+		else if (fname==NULL)
+			fname = arg;
+	}
     
-    argc--; *argv++; //dont need first argument (executable name)
-    while (argc-- > 0) {
-        char* arg = *argv++;
-        if (strcmp(arg,"--source")==0)
-            printSource = 1;
-        else if (strcmp(arg,"--clean")==0)
-            printClean = 1;
-        else if (fname==NULL)
-            fname = arg;
-    }
-    
-    source = malloc( sizeof(char)*2500 );
-    tokens = malloc( sizeof(char)*2500 );
+	source = malloc( sizeof(char)*2500 );
+	tokens = malloc( sizeof(char)*2500 );
 	input = malloc( sizeof(char)*2500 );
 	input_guide = malloc( sizeof(int)*2500 );
     
-    file = fopen(fname,"r");
-    readFile();
+	file = fopen(fname,"r");
+	readFile();
+	fclose(file);
     
-    fclose(file);
-    
-    file = fopen(fname,"r");
-    
-  	int i = 0;
+	int i = 0;
 	char c;
 	token_type tok;
 
@@ -531,9 +528,9 @@ int main(int argc, char** argv) {
 
   	//PRINT UNCLEAN SOURCE
 	if (printSource) {
-	    printf("\nsource code:\n------------\n");
-	    printf("%s\n",source);
-    }
+		printf("\nsource code:\n------------\n");
+		printf("%s\n",source);
+	}
   	
 	//Lex the input
 	while ((tok=lex()) != nulsym) {
@@ -543,9 +540,9 @@ int main(int argc, char** argv) {
 	
 	//PRINT WITHOUT COMMENTS
 	if (printClean) {
-	    printf("source code without comments:\n-----------------------------\n");
-	    printf("%s\n",input);
-    }
+		printf("source code without comments:\n-----------------------------\n");
+		printf("%s\n",input);
+	}
 	
 	//PRINT TOKENS
 	printf("tokens:\n-------\n");
