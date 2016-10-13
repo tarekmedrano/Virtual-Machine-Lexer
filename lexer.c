@@ -23,112 +23,89 @@ union lval {
 	int num; 
 } lval; 
 
-FILE* file;
-
-char *source;
-int sourceIndex;
-
 char *tokens;
 int t_pointer;
 char *input;
 int pointer;
 int *input_guide;
+int terminate;
+int printSource;
+FILE* file;
 
 token_type lex();
 int startComment();
 void tokenSym( token_type t );
 void inputChar( char c );
-int wordPrint( /*char c,*/ int p, int *ill );
+int wordPrint( int p, int *ill );
 void inputGuider( int i );
+void condPrintf( char c );
 
-void readFile();
-char source_getc();
-void source_ungetc(char c);
-
-void readFile() {
-	int index = 0;
-	while (1) {
-		char c = fgetc(file);
-		if (c==EOF) {
-			source[index] = '\0';
-			break;
-		}
-		source[index] = c;
-		index++;
-	}
-}
-
-char source_getc() {
-	char c = source[sourceIndex];
-	sourceIndex++;
-	return c;
-}
-
-void source_ungetc(char c) {
-	sourceIndex--;
-	source[sourceIndex] = c;
-}
-
-//Lex the input and removes comments
+// Lex the input and output it before comments are removed
 token_type lex() {
 	
 	char c, d;
 	int saw_comment;
 	
-	//ignore space, tab, newline
-	while ((c=source_getc()) == ' ' || c == '\t' || c == '\n') {
+	// Ignore space, tab, newline
+	while ((c=getc(file)) == ' ' || c == '\t' || c == '\n' || c == '\r') {
 		
 		inputGuider( 0 );
 		if( c == ' ' ) {
-			input[pointer] = c;
-			pointer++;
+			//printf(" ");
+			condPrintf(c);
+			inputChar(c);
 		}
 		else if( c == '\t' ) {
-			input[pointer] = '\t';
-			pointer++;
+			//printf("\t");
+			condPrintf(c);
+			inputChar(c);
 		}
-		else if( c == '\n' ) {
-			input[pointer] = c;
-			pointer++;
+		else if( c == '\n' || c == '\r') {
+			//printf("\n");
+			condPrintf(c);
+			inputChar(c);
 		}
 	}
 	
-	//Check for comment start
+	// Check for comment start
 	saw_comment = 0;
 	if( c == '/' ) {
-		if( (d = source_getc()) == '*' ) {
+		if( (d = getc(file)) == '*' ) {
 			saw_comment = 1;
 			if( !startComment() ) {
-				return nulsym; //EOF while in comment
+				return nulsym; // EOF while in comment
 			}
-			c = source_getc();
+			c = getc(file);
 		} else
-			source_ungetc(d);
+			ungetc(d, file);
 	}
 	
-	//Check for white space again after comment 
+	// Check for white space again after comment 
 	if( saw_comment ) {
-		source_ungetc(c);
-		while ( (c=source_getc()) == ' ' || c == '\t' || c == '\n') {
+		ungetc(c, file);
+		while ( (c=getc(file)) == ' ' || c == '\t' || c == '\n' || c == '\r') {
 			
 			inputGuider( 0 );
 			if( c == ' ' ) {
-				input[pointer] = c;
-				pointer++;
+				//printf(" ");
+				condPrintf(c);
+				inputChar(c);
 			}
 			else if( c == '\t' ) {
-				input[pointer] = c;
-				pointer++;
+				//printf("\t");
+				condPrintf(c);
+				inputChar(c);
 			}
-			else if( c == '\n' ) {
-				input[pointer] = c;
-				pointer++;
+			else if( c == '\n' || c == '\r') {
+				//printf("\n");
+				condPrintf(c);
+				inputChar('\n');
 			}
 		}
 	}
 	
-	//End of the file, stop lexxing
-	if (c == '\0') return nulsym;
+	// End of the file, stop lexxing
+	if (c == EOF) return nulsym;
 
 	// Identifier or reserved word
 	if (isalpha(c)) {
@@ -137,20 +114,20 @@ token_type lex() {
 		
 		do {
 			
+			//printf("%c", c);
+			condPrintf(c);
 			inputGuider( 3 );
-			input[pointer] = c;
-			pointer++;
+			inputChar(c);
 			*p++ = c;
 
-		} while ((c=source_getc()) != '\0' && isalnum(c));
+		} while ((c=getc(file)) != EOF && isalnum(c));
 
-		source_ungetc(c);
+		ungetc(c, file);
 
 		*p = '\0';
 
 		// check if any of these identifiers were actually meant
-		// to be reserved words instead. 
-		// -Tarek Medrano
+		// to be reserved words instead
 
 		if(strcmp(sbuf, "begin") == 0) return beginsym;
 
@@ -189,121 +166,118 @@ token_type lex() {
 	if (isdigit(c)){
   		
 		char sbuf[100], *p = sbuf;
+		int length = 0;
 
 		do {
 			
-			inputGuider( 3 );
-			input[pointer] = c;
-			pointer++;
-			*p++ = c;
+			length++;
+			// Number too large
+			if ( length == 6 ) {
+				printf("\nNumber too large\n");
+				terminate = 1;
+				return 0;
+				
+			// Number is sufficient size
+			} else {
+				condPrintf(c);
+				inputGuider( 3 );
+				inputChar(c);
+				*p++ = c;
+			}
 
-		} while ((c=source_getc()) != '\0' && isdigit(c));
+		} while ((c=getc(file)) != EOF && isdigit(c));
 
-		source_ungetc(c);
+		ungetc(c, file);
 
 		*p = '\0';
 		
 		return numbersym;  	
 	}
 	
-	//Reserved symbol or illegal token
+	// Reserved symbol or illegal token
+	condPrintf(c);
 	switch (c) {
 		
 		case '+' :
 		 inputGuider( 1 );
-		 input[pointer] = '+';
-		 pointer++;
+		 inputChar(c);
 		 
 		 return plussym;
 			
 		case '*' :
 		 inputGuider( 1 );
-		 input[pointer] = '*';
-		 pointer++;
+		 inputChar(c);
 		 
 		 return multsym;
 			
 		case '(' :
 		 inputGuider( 1 );
-		 input[pointer] = '(';
-		 pointer++;
+		 inputChar(c);
 		 
 		 return lparentsym;
 			
 		case ')' :
 		 inputGuider( 1 );
-		 input[pointer] = ')';
-		 pointer++;
+		 inputChar(c);
 		 
 		 return rparentsym;
-		
-		// Completed these operator tokens
-		// Tarek Medrano  
 			
 		case '/' :
 		 inputGuider( 1 );
-		 input[pointer] = '/';
-		 pointer++;
+		 inputChar(c);
 		 
 		 return slashsym;
 			
 		case '-' :
 		 inputGuider( 1 );
-		 input[pointer] = '-';
-		 pointer++;
+		 inputChar(c);
 		 
 		 return minussym;
 			
 		case ',' :
 		 inputGuider( 1 );
-		 input[pointer] = ',';
-		 pointer++;
+		 inputChar(c);
 		 
 		 return commasym;
 			
 		case ';' :
 		 inputGuider( 1 );
-		 input[pointer] = ';';
-		 pointer++;
+		 inputChar(c);
 	
 		 return semicolonsym;
 			
 		case '.' :
 		 inputGuider( 1 );
-		 input[pointer] = '.';
-		 pointer++;
+		 inputChar(c);
 		 
 		 return periodsym;
 			
 		case '<' :
 		 inputGuider( 2 );
-		 input[pointer] = '<';
-		 pointer++;
+		 inputChar(c);
 		 
-		 if((c=source_getc()) == '=') {
+		 if((c=getc(file)) == '=') {
+			 condPrintf(c);
 			 inputGuider( 2 );
-			 input[pointer] = '=';
-			 pointer++;
+			 inputChar(c);
 			 
 			 return leqsym;
 		 }
-		 
 		 //Undo 22 in inputGuide to 10
 		 pointer -= 2; inputGuider( 1 );
 		 pointer += 1; inputGuider( 0 );
 		 
-		 source_ungetc(c);
+		 ungetc(c, file);
 		 return lessym;     	    	
 			
 		case '>' :
 		 inputGuider( 2 );
-		 input[pointer] = '>';
-		 pointer++;
+		 inputChar(c);
 		 
-		 if((c=source_getc()) == '=') {
+		 if((c=getc(file)) == '=') {
+			 condPrintf(c);
 			 inputGuider( 2 );
-			 input[pointer] = '=';
-			 pointer++;
+			 inputChar(c);
 			 
 			 return geqsym;
 		 }
@@ -311,18 +285,17 @@ token_type lex() {
 		 pointer -= 2; inputGuider( 1 );
 		 pointer += 1; inputGuider( 0 );
 		 
-		 source_ungetc(c);
+		 ungetc(c, file);
 		 return gtrsym;
 			
 		case '!' :
 		 inputGuider( 2 );
-		 input[pointer] = '!';
-		 pointer++;
+		 inputChar(c);
 		 
-		 if((c=source_getc()) == '=')  {
+		 if((c=getc(file)) == '=')  {
+			 condPrintf(c);
 			 inputGuider( 2 );
-			 input[pointer] = '=';
-			 pointer++;
+			 inputChar(c);
 			 
 			 return neqsym;
 		 }
@@ -330,19 +303,17 @@ token_type lex() {
 		 pointer -= 2; inputGuider( 4 );
 		 pointer += 1; inputGuider( 0 );
 		 
-		 source_ungetc(c);
-		 //printf("illegal token \n");
+		 ungetc(c, file);
 		 break;
 		  
 		case ':' :
 		 inputGuider( 2 );
-		 input[pointer] = ':';
-		 pointer++;
+		 inputChar(c);
 		 
-		 if((c=source_getc()) == '=') {
+		 if((c=getc(file)) == '=') {
+			 condPrintf(c);
 			 inputGuider( 2 );
-			 input[pointer] = '=';
-			 pointer++;
+			 inputChar(c);
 			 
 			 return becomessym;
 		 }
@@ -350,14 +321,12 @@ token_type lex() {
 		 pointer -= 2; inputGuider( 4 );
 		 pointer += 1; inputGuider( 0 );
 		 
-		 source_ungetc(c);
-		 //printf("illegal token\n");
+		 ungetc(c, file);
 		 break; 		  
 				
 		case '=' :
 		 inputGuider( 1 );
-		 input[pointer] = '=';
-		 pointer++;
+		 inputChar(c);
 		 
 		 return eqsym;
 		 
@@ -365,66 +334,77 @@ token_type lex() {
 		 
 		default  :
 			inputGuider( 4 );
-			input[pointer] = c;
-			pointer++;
-			//printf("illegal token\n");
+			inputChar(c);
 	}
 }
 
 
-//Add white space to the input string to maintain spacing
-//Exit if we see */
-//-Austin
+// Add white space to the input string to maintain spacing
+// Exit if we see "*/"
 int startComment(){
 	
 	char c, d;
 	
-	//To make up for the start of the comment /* 
+	// To make up for the start of the comment /*
+	condPrintf('/');
+	inputChar(' ');
+	condPrintf('*');
+	inputChar(' ');
 	
-	//Continue unless EOF or if we find */
-	
-	while( (c=source_getc()) != '\0' ) {
+	// Continue unless EOF or if we find */
+	while( (c=getc(file)) != EOF ) {
 		
-		//Exit comment if we find */
+		//Exit comment if we find "*/"
 		if( c  == '*' ) {
-			if( (d=source_getc()) == '/' ) {
+			if( (d=getc(file)) == '/' ) {
+				//printf("*");
+				condPrintf('*');
+				inputChar(' ');
+				//printf("/");
+				condPrintf('/');
+				inputChar(' ');
 				return 1;
 			} else {
-				source_ungetc(d);
+				ungetc(d, file);
 			}
 		}
 		
-		//Tab is different since it takes multiple spaces
+		// Tab is different since it takes multiple spaces
 		if( c == '\t' ) {
-			input[pointer] = '\t';
-			pointer++;
+			//printf("\t"); 
+			condPrintf(c);
+			inputChar('\t');
 		}
 		
-		//Otherwise, we just copy a space to input and continue
+		// New line
+		else if( c == '\n' || c == '\r') {
+			//printf("\n");
+			condPrintf(c);
+		}
+		
+		// Otherwise, we just copy a space to input and continue
 		else {
-			input[pointer] = ' ';
-			pointer++;
+			//printf("%c", c); 
+			condPrintf(c);
+			inputChar(' ');
 		}
 		
 	}
 	
-	//Quit lex since EOF
+	// Quit lex since EOF
 	return 0;
 }
 
 
-//This occured a lot so I made a function for it to make things look cleaner
+// Cleans up main
 void tokenSym( token_type t ) {
 	tokens[t_pointer] = t;
 	t_pointer++;
 }
 
 
-//Like tokenSym, but for input[] and pointer
-//Replaces the following two lines in lex():
-//	input[pointer] = ___;
-//	pointer++;
-void inputChar( char c ){
+// Makes lex look less cluttered
+void inputChar( char c ) {
 	
 	input[pointer] = c;
 	pointer++;
@@ -432,11 +412,7 @@ void inputChar( char c ){
 }
 
 
-// when printing out the tokens this decides which is a full word so 
-// it will print out var instead v a r on different lines
-// -------------
-// We want this to print any input over again and then place the token type next to it.
-// -Tarek
+// Prints tokens
 int wordPrint(/*char c,*/ int p, int *ill) {
 	
 	int j = p;
@@ -470,7 +446,7 @@ int wordPrint(/*char c,*/ int p, int *ill) {
 		return j;
 	}
 	
-	while( input[j] == '\n' )
+	while( input[j] == '\n' || input[j] == '\r')
 		j++;
 	
 	// Print "illegal token"
@@ -485,20 +461,27 @@ int wordPrint(/*char c,*/ int p, int *ill) {
 // i=0 skip, i=1 print single char, i=2 print 2 char, i=3 print string or identifier
 // until i changes, i=4 illegal token
 // Example:
-//		input: var x, dog;
-//		guide: 22202102221
+//		input: var x, dog ^;
+//		guide: 2220210222041
 void inputGuider( int i ) {
 	input_guide[pointer] = i;
 }
+
+
+// Conditional Printf Statement that only prints if printSource is 1
+// Replaces any printf in lex
+void condPrintf( char ch ) {
+	if( printSource )
+		printf("%c", ch);
+}
+
+
+int main( int argc, char** argv ) {
 	
-
-
-int main(int argc, char** argv) {
-
 	char* fname = NULL;
-	int printSource = 0;
 	int printClean = 0;
-
+	printSource = 0;
+	
 	argc--; *argv++; //dont need first argument (executable name)
 	while (argc-- > 0) {
 		char* arg = *argv++;
@@ -509,58 +492,72 @@ int main(int argc, char** argv) {
 		else if (fname==NULL)
 			fname = arg;
 	}
-    
-	source = malloc( sizeof(char)*2500 );
-	tokens = malloc( sizeof(char)*2500 );
-	input = malloc( sizeof(char)*2500 );
-	input_guide = malloc( sizeof(int)*2500 );
-    
+	
 	file = fopen(fname,"r");
-	readFile();
-	fclose(file);
-    
-	int i = 0;
+	terminate = 0;
+  	int i = 0;
 	char c;
 	token_type tok;
 
+	tokens = malloc( sizeof(char)*2500 );
+	input = malloc( sizeof(char)*2500 );
+	input_guide = malloc( sizeof(int)*2500 );
 	t_pointer = 0;
 	pointer = 0;
 
-  	//PRINT UNCLEAN SOURCE
-	if (printSource) {
-		printf("\nsource code:\n------------\n");
-		printf("%s\n",source);
-	}
   	
-	//Lex the input
+	// Lex the input and print the input
+  	if ( printSource) 
+		printf("\nsource code:\n-----------\n");
 	while ((tok=lex()) != nulsym) {
+		
+		// There was an error so stop the program
+		if (terminate) {
+			free(input);
+			free(tokens);
+			free(input_guide);
+			fclose(file);
+			return 0;
+		}
+		
+		// Print tokens later
 		tokenSym( tok );
+
 	}
 	input[pointer] = '\0';
 	
-	//PRINT WITHOUT COMMENTS
-	if (printClean) {
+	// PRINT WITHOUT COMMENTS
+	if ( printClean ) {
 		printf("source code without comments:\n-----------------------------\n");
-		printf("%s\n",input);
+		i = 0;
+		c = input[0];
+		while( c != '\0') {
+			
+			printf("%c", c);
+			i++;
+			c = input[i];
+		}
 	}
 	
-	//PRINT TOKENS
-	printf("tokens:\n-------\n");
+	
+	// PRINT TOKENS
+	printf("\n\ntokens:\n-------\n");
 	int j;
 	i = 0;
 	int illegal = 0;
-	for( j = 0; j < pointer; /*intentionally blank*/ ) {
+	for( j = 0; j < pointer; i++ ) { // Note: i++ not j++
 		
 		j = wordPrint( j, &illegal );
 		if( !illegal )
 			printf("%-2d\n", tokens[i] );
 		illegal = 0;
-		i++;
+		
 	}
 
 	free(input);
 	free(tokens);
 	free(input_guide);
+	fclose(file);
 	
 	return 0;
 }
