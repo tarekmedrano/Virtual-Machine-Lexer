@@ -1,3 +1,5 @@
+Compiler Builder 15
+
 Tarek
 
 Organized the outline of first draft 
@@ -8,9 +10,9 @@ Ran test cases
 
 Austin
 
-Worked on functions startComment, inputChar, tokenSym, and inputGuider
+Worked on functions startComment, inputChar, tokenSym, condPrintf, and inputGuider
 Helped revise functions lex, wordPrint, and main
-Helped input and input w/o comments print correctly
+Helped each output print correctly
 Ran test cases
 
 Gabriela
@@ -25,6 +27,7 @@ Helped token output print correctly
 
 Jonahan
 
-Helped revise functions lex and main
+Helped revise functions lex, condPrintf, and main
 Implemented argument flags and reading input as command line arguments
+Helped token output print correctly
 
