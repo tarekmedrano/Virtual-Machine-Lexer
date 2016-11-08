@@ -1,4 +1,4 @@
-# Virtual-Machine-Lexer
+# Virtual-Machine
 Pl/0 Lexer 
 
 Professor's Wiki for the assignment:
