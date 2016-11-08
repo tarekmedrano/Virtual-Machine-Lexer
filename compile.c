@@ -12,6 +12,18 @@
 #define MAX_SYMBOL_TABLE_SIZE 10000
 
 
+
+enum token{nulsym = 1, identsym = 2, numbersym = 3, plussym = 4, minussym = 5, multsym = 6,
+slashsym = 7, oddsym = 8, eqlsym = 9, neqsym = 10, lessym = 11, leqsym = 12,
+gtrsym = 13, geqsym = 14, lparentsym = 15, rparentsym = 16, commasym = 17,
+semicolonsym = 18, periodsym = 19, becomessym = 20, beginsym = 21, endsym = 22,
+ifsym = 23, thensym = 24, whilesym = 25, dosym = 26, callsym = 27, constsym = 28,
+intsym = 29, procsym = 30, outsym = 31, insym = 32, elsesym = 33};
+
+
+
+
+
 typedef struct{
   char type[3];
   char val[12];
@@ -36,7 +48,8 @@ typedef struct{
 symbol symbol_table[MAX_SYMBOL_TABLE_SIZE];
 int symIndex=0;
 int symAddr = 3;
-
+// keep track of symbols in symbol table?
+int symbol_cnt;
 
 // Code array
 code_struct code[MAX_CODE_LENGTH] ;
@@ -47,8 +60,7 @@ int tokenArray[MAX_CODE_LENGTH];
 int current_token;
 int tokenIndex =0; int tokenPtr =0;
 
-// keep track of symbols in symbol table?
-int symbol_cnt;
+
 
 FILE* Parserin;
 
@@ -107,9 +119,54 @@ void term(){
 	
 }
 
-
+// Tarek
 void factor(){
+	int i;
+	if(current_token == identsym){
+		
+		current_token = get_next_t();
+		
+		for(i = 0; i< symbol_cnt; i++){
+			if(symbol_table[i].name == token){
+				
+				if(symbol_table[i].kind == 1){
+					emit(lit, 0, symbol_table[i].val);
+					break;
+				}
+				
+				else{
+					emit(lod, curr_lvl-symbol_table[i].level, symbol_table[j].addr);
+					break;
+				}		
+			}	
+		}
+		
+		current_token = get_next_t();
+	}
 	
+	
+	else if(current_token == numbersym){
+		current_token = get_next_t();
+		emit(lit, 0, current_token);
+		token = get_next_t();
+	}
+	
+	else if(current_token == lparentsym){
+		current_token = get_next_t();
+		current_token = expression();
+		if(current_token != rparentsym){
+			
+			// fill this in with an error?
+		}
+		
+		current_token = get_next_t();
+		
+	}
+	
+	else{
+		
+		//print out an invalid factor error
+	}
 }
 
 
@@ -121,10 +178,12 @@ void expression(){
 	
 
 int get_next_t(){
-	
+	int current_token = tokenArray[tokenPtr];
+	tokenPtr ++;
 }
 
-
+// Fill this function with all the different errors we can get
+// use switches preferably?
 void err(int n){
 	
 }
