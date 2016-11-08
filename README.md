@@ -9,3 +9,6 @@ https://bitbucket.org/schneider128k/2016_fall_2016_cop3402/src/660292a94a9326ee0
 
 Professor's Sample input/output and tokens:
 https://bitbucket.org/schneider128k/2016_fall_2016_cop3402/src/874f84f7310c8a8b0066cc8f0d8f12c456a49ece/1_lexer/?at=master
+
+Parser and Code Generator assignment:
+http://www.cs.ucf.edu/~wocjan/Teaching/2016_Fall/cop3402/2_homeworks/IntermediateCodeGeneration.pdf
