@@ -46,7 +46,7 @@ typedef struct{
 // All our global Vars
 
 symbol symbol_table[MAX_SYMBOL_TABLE_SIZE];
-int symIndex=0;
+int symIndex= 0;
 int symAddr = 3;
 // keep track of symbols in symbol table?
 int symbol_cnt;
@@ -58,7 +58,8 @@ int curr_lvl = 0;
 
 int tokenArray[MAX_CODE_LENGTH];
 int current_token;
-int tokenIndex =0; int tokenPtr =0;
+int tokenIndex = 0;
+int tokenPtr = 0;
 
 
 
@@ -67,9 +68,7 @@ FILE* Parserin;
 // Function prototypes
 
 int get_next_t();
-
 void add_symbol(int k, char name[], int val, int addr);
-
 void err(int n);
 
 //Generates the PL/0 code line w/ the input fields.
@@ -90,12 +89,76 @@ void Parser(int flag){
 	
 }
 
+// Austin
+// Get token, call block(), end on period
 void program(){
 	
+	get_next_t();
+	block();
+	if( current_token != periodsym ) ; // raise error
 }
 
+// Austin
+// Check for constant declaration, variable declaration, procedure, then do statement
+// Note: still needs errors
 void block(){
 	
+	// Constant declaration
+	// EBSF: const id equals num { comma id = num } semicolon
+	if( current_token == constsym ) {
+		
+		// Loop until no more constants declared (when we see a comma)
+		// Must see identifier, equals sign, then a number
+		while( current_token == commasym ) {
+			
+			get_next_t();
+			if( current_token != identsym ) ; // raise error
+			get_next_t();
+			
+			if( current_token != eqlsym ) ; // raise error
+			get_next_t();
+			
+			if( current_token != identsym ) ; // raise error
+			get_next_t();
+		}
+		
+		if( current_token != semicolonsym ) ; // raise error
+		get_next_t();
+	}
+	
+	// Variable declaration
+	// EBSF: var id { comma id } semicolon
+	if( current_token == varsym ) {
+		
+		// 
+		while( current_token == commasym ) {
+			get_next_t();
+			if( current_token != identsym ) ; // raise error
+			get_next_t();
+		}
+		
+		if( current_token != semicolonsym ) ; // raise error
+		get_next_t();
+	}
+	
+	// Procedure (Note: unused in tiny PL/0)
+	// EBSF: proc { identifier semicolon block semicolon }
+	while( current_token == procsym ) {
+		
+		get_next_t();
+		if( current_token != identsym ) ; // raise error
+		get_next_t();
+		if( current_token != semicolonsym ) ; // raise error
+		get_next_t();
+		
+		block();
+		
+		if( current_token != semicolonsym ) ; // raise error
+		get_next_t();
+	}
+	
+	// Call statement
+	statement();
 }
 
 void statement(){
@@ -124,7 +187,7 @@ void factor(){
 	int i;
 	if(current_token == identsym){
 		
-		current_token = get_next_t();
+		get_next_t();
 		
 		for(i = 0; i< symbol_cnt; i++){
 			if(symbol_table[i].name == token){
@@ -141,25 +204,25 @@ void factor(){
 			}	
 		}
 		
-		current_token = get_next_t();
+		get_next_t();
 	}
 	
 	
 	else if(current_token == numbersym){
-		current_token = get_next_t();
+		get_next_t();
 		emit(lit, 0, current_token);
 		token = get_next_t();
 	}
 	
 	else if(current_token == lparentsym){
-		current_token = get_next_t();
-		current_token = expression();
+		get_next_t();
+		current_token = expression(); // possible edit after experssion() finished
 		if(current_token != rparentsym){
 			
 			// fill this in with an error?
 		}
 		
-		current_token = get_next_t();
+		get_next_t();
 		
 	}
 	
@@ -172,13 +235,15 @@ void factor(){
 
 
 void expression(){
-
-		
-	}
 	
-
-int get_next_t(){
-	int current_token = tokenArray[tokenPtr];
+}
+	
+// "Current_token was already a global so I changed made a few adjustments
+// to this and to factor()" - Austin
+// 
+// Gets the next token in the tokenArray and advances the pointer
+void get_next_t() {
+	current_token = tokenArray[tokenPtr];
 	tokenPtr ++;
 }
 
