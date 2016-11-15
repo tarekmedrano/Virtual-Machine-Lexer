@@ -8,19 +8,53 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include <string.h>
+#include <ctype.h>
 #define MAX_CODE_LENGTH 500
 #define MAX_SYMBOL_TABLE_SIZE 10000
 
 
 
-enum token{nulsym = 1, identsym = 2, numbersym = 3, plussym = 4, minussym = 5, multsym = 6,
-slashsym = 7, oddsym = 8, eqlsym = 9, neqsym = 10, lessym = 11, leqsym = 12,
-gtrsym = 13, geqsym = 14, lparentsym = 15, rparentsym = 16, commasym = 17,
-semicolonsym = 18, periodsym = 19, becomessym = 20, beginsym = 21, endsym = 22,
-ifsym = 23, thensym = 24, whilesym = 25, dosym = 26, callsym = 27, constsym = 28,
-intsym = 29, procsym = 30, outsym = 31, insym = 32, elsesym = 33};
+typedef enum {  nulsym = 1, identsym, numbersym, plussym, minussym,
+	multsym, slashsym, oddsym, eqsym, neqsym, lessym, leqsym,
+	gtrsym, geqsym, lparentsym, rparentsym, commasym, semicolonsym,
+	periodsym, becomessym, beginsym, endsym, ifsym, thensym,
+	whilesym, dosym, callsym, constsym, varsym, procsym, writesym,
+	readsym , elsesym } token_type;
 
+//if we put the operations here we wont get any more errors when emitting
+typedef enum
+{
+    hlt,
+    lit,
+    opr,
+    lod,
+    sto,
+    cal,
+    inc,
+    jmp,
+    jpc,
+    sio
+} opcode;
+
+typedef enum
+{
+    RET,
+    NEG,
+    ADD,
+    SUB,
+    MUL,
+    DIV,
+    ODD,
+    MOD,
+    EQL,
+    NEQ,
+    LSS,
+    LEQ,
+    GTR,
+    GEQ
+} oprcode;
 
 
 typedef struct{
@@ -36,7 +70,7 @@ typedef struct{
   
 typedef struct{
   int kind;			// const = 1, var = 2, proc = 3
-  char name[13];	//name up to 12 chars
+  int name;			//name up to 12 chars
   int val;			// number (ascii val)
   int level;		// L level 
   int addr;			// M address
@@ -110,7 +144,7 @@ void block(){
 			if( current_token != identsym ) ; // raise error
 			get_next_t();
 			
-			if( current_token != eqlsym ) ; // raise error
+			if( current_token != eqsym ) ; // raise error
 			get_next_t();
 			
 			if( current_token != numbersym ) ; // raise error
@@ -187,7 +221,7 @@ void statement(){
 		condition();
 		if(current_token != thensym) ; // raise error
 		get_next_t();
-		statement()
+		statement();
 		return;
 		
 	} else if(current_token == whilesym) {
@@ -234,7 +268,7 @@ bool rel_op(){
 	
 	switch(current_token){
 
-	case eqlsym : // '='
+	case eqsym : // '='
 		return true;
 	
 	case neqsym : //'<>' "This is correct" - Austin
@@ -253,7 +287,8 @@ bool rel_op(){
 		return true;
 
 	default :
-		printf("error sysntax error, need Relational Operators");
+		err(20);
+		return false;
 		//error sysntax error, need Relational Operators
 		// error msg and exit() code need here!!
 	}
@@ -297,7 +332,7 @@ void factor(){
 				// otherwise we load the address of the factor and emit it in the virtual
 				// mach.
 				else{
-					emit(lod, curr_lvl-symbol_table[i].level, symbol_table[j].addr);
+					emit(lod, curr_lvl-symbol_table[i].level, symbol_table[i].addr);
 					break;
 				}		
 			}	
@@ -355,7 +390,6 @@ void get_next_t() {
 // "Page 5 of the following link should include all of the errors we need" - Austin
 // http://www.cs.ucf.edu/~wocjan/Teaching/2016_Fall/cop3402/2_homeworks/IntermediateCodeGeneration.pdf
 // I'm filling in the errors that I see are possible, will need editing for usability after. - Gabriela
-// Went ahead and finished up all 25 of the errors -Tarek
 void err(int n){
 	switch(n) {
 		
@@ -375,7 +409,7 @@ void err(int n){
 			printf("Error: const, var, procedure must be followed by identifier.\n");
 			break;
 			
-	    	case 5:
+	    case 5:
 			printf("Error: Semicolon or comma missing.\n");
 			break;
 			
@@ -383,11 +417,11 @@ void err(int n){
 			printf("Error: Incorrect symbol after procedure declaration.");
 			break;
 			
-	    	case 7:
+	    case 7:
 			printf("Error: Statement expected");
 			break;
 			
-	    	case 8:
+	    case 8:
 			printf("Error: Incorrect symbol after statement part in block.\n");
 			break;
 			
@@ -395,7 +429,7 @@ void err(int n){
 			printf("Error: Period expected.\n");
 			break;
 			
-	    	case 10:
+	    case 10:
 			printf("Error: Semicolon between statements missing.\n");
 			break;
 			
@@ -407,57 +441,45 @@ void err(int n){
 			printf("Error: Assignment to constant or procedure is not allowed. \n");
 			break;
 			
-	    	case 13:
-	        	printf("Error: Assignment operater expected. \n");
-		    	break;
+	    case 13:
+	        printf("Error: Assignment operater expected. \n");
+		    break;
 			
 		case 14:
-		    	printf("Error: call must be followed by an identifier. \n");
-			break;
-			
+		    printf("Error: call must be followed by an identifier. \n");
+		
 		case 15:
 			printf("Error: Call of a constant or variable is meaningless.\n");
-			break;
 			
 		case 16:
 			printf("Error: then expected \n");
-			break;
-			
+		
 		case 17:
 			printf("Error: Semicolon or } expected.\n");
-			break;
-			
+		
 		case 18:
 			printf("Error: do expected.\n");
-			break;
 			
 		case 19:
 			printf("Error: Incorrect symbol following statement\n");
-			break;
-			
+		
 		case 20:
 			printf("Error: Relational operator expected.\n");
-			break;
-			
+		
 		case 21:
 			printf("Error: Relational operator expected.\n");
-			break;
-			
+		
 		case 22:
 			printf("Error: Right parenthesis missing. \n");
-			break;
-			
+		
 		case 23:
 			printf("The preceding factor cannot begin with this symbol.\n");
-			break;
-			
+		
 		case 24:
 			printf("An expression cannot begin with this symbol.\n");
-			break;
-			
+		
 		case 25:
 			printf("This number is too large.\n");
-			break;
 	}
 }
 
