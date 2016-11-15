@@ -65,7 +65,7 @@ FILE* Parserin;
 
 // Function prototypes
 
-int get_next_t();
+void get_next_t(); // turned this to a void, was int
 void add_symbol(int k, char name[], int val, int addr);
 void err(int n);
 
@@ -158,25 +158,118 @@ void block(){
 	// Call statement
 	statement();
 }
-
+// jerasimos
 void statement(){
-	
+	if(current_token == identsym){
+		get_next_t();
+		// what sym is :=
+		expression();
+		return;
+	}else if(current_token == beginsym){
+		get_next_t();
+		statement();
+		while(current_token == semicolonsym)
+			statement();
+		if(current_token == endsym){
+			get_next_t();
+			return;
+		}else{
+			printf("error encountered");
+			//error. 
+		}
+	}else if(current_token == ifsym ){
+		get_next_t();
+		condition();
+		if(current_token == thensym){
+			get_next_t();
+			statement()
+		}else{
+			printf("error encountered");
+			//error.
+		}
+
+	}else if(current_token == readsym ){
+		get_next_t();
+		if(	current_token == oddsym){
+			get_next_t();
+			return;
+		}else{
+			printf("error encountered");
+			//error.
+		}
+	}else if(current_token == writesym){
+		get_next_t();
+		if(	current_token == oddsym){
+			get_next_t();
+			return;
+		}else{
+			printf("error encountered");
+			//error.
+		}
+
+
+	}else
 }
 
+// jerasimos 
 void condition(){
-	
+	if(	current_token == oddsym){
+		get_next_t();
+		expression();
+		return;
+	}else{
+		expression();
+		rel_op();
+		expression();
+		return;
+	}
+
 }
 
-
+// jerasimos
 int rel_op(){
 	
+	// current_token should be the current token value and not an int
+	switch(current_token){
+
+	case eqlsym : // '='
+
+		break;
 	
+	case neqsym : //'<>': hope neqsym is <>
+
+		break;
 	
+	case lessym : // '<'
+
+		break;
+	
+	case leqsym : // '<='
+
+		break;
+
+	case gtrsym : // '>'
+
+		break;
+	
+	case geqsym : // '>='
+
+		break;
+
+	default :
+		printf("error sysntax error, need Relational Operators");
+		//error sysntax error, need Relational Operators
+		// error msg and exit() code need here!!
+	}
+	get_next_t();
 }
 
-
+// jerasimos
 void term(){
-
+	factor();
+	while(current_token == multsym || current_token == slashsym){
+		factor();
+	}
 	
 }
 
@@ -231,9 +324,19 @@ void factor(){
 }
 
 
-
+// jerasimos
 void expression(){
-	
+	if(current_token == plussym || current_token == minussym){
+		get_next_t();
+	}
+	if(current_token == identsym ){
+	}else{
+		//error missing +,-, or <indent>
+		printf("error missing +,-, or <indent>");
+	}
+	while(current_token == plussym || current_token == minussym){
+		term();
+	}
 }
 	
 // "Current_token was already a global so I changed made a few adjustments
@@ -254,43 +357,43 @@ void err(int n){
 			printf("Error: File must end in a period.");
 			break;
 		case 2:
-			printf("Error: Missing identifier.);
+			printf("Error: Missing identifier.");
 			break;
 		case 3: 
-			printf("Error: Identifier should be followed by =);
+			printf("Error: Identifier should be followed by =");
 			break;
 		case 4:
-			printf("Error: = should be followed by a number.);
+			printf("Error: = should be followed by a number.");
 			break;
 	        case 5:
-			printf("Error: Declaration must end with ;);
+			printf("Error: Declaration must end with ;");
 			break;
 		case 6:
-			printf("Error: Missing procedure declaration.);
+			printf("Error: Missing procedure declaration.");
 			break;
 	        case 7:
-			printf("Error: No ; at the end of block.);
+			printf("Error: No ; at the end of block.");
 			break;
 	        case 8:
-			printf("Error: Missing := in statement.);
+			printf("Error: Missing := in statement.");
 			break;
 		case 9:
-			printf("Error: Begin must be closed with end.);
+			printf("Error: Begin must be closed with end.");
 			break;
 	        case 10:
-			printf("Error: if must be followed by then.);
+			printf("Error: if must be followed by then.");
 			break;
 		case 11:
-			printf("Error: while must be followed by do.);
+			printf("Error: while must be followed by do.");
 			break;
 		case 12:
-			printf("Error: Relational operator missing in conditional statement.);
+			printf("Error: Relational operator missing in conditional statement.");
 			break;
 	        case 13:
-	                printf("Error: Left ( has not been closed.);
+	                printf("Error: Left ( has not been closed.");
 		        break;
 		case 14:
-		        printf("Error: Identifier, (, or number expected.);
+		        printf("Error: Identifier, (, or number expected.");
 	}
 }
 
@@ -313,3 +416,4 @@ void emit(int op, int l, int m){
 void add_symbol(int k, char name[], int val, int addr){
 	
 }
+
