@@ -82,7 +82,7 @@ symbol symbol_table[MAX_SYMBOL_TABLE_SIZE];
 int symIndex= 0;
 int symAddr = 3;
 // keep track of symbols in symbol table?
-int symbol_cnt;
+int num_symbols = 0;
 
 // Code array
 code_struct code[MAX_CODE_LENGTH] ;
@@ -97,7 +97,7 @@ int tokenPtr = 0;
 FILE* Parserin;
 
 void get_next_t(); // turned this to a void, was int
-void add_symbol(int k, char name[], int val, int addr);
+void add_symbol(int k, char name[], int num, int level, int modifier);
 void err(int n);
 
 //Generates the PL/0 code line w/ the input fields.
@@ -136,20 +136,29 @@ void block(){
 	// EBSF: "const" <id> "=" <num> { "," <id> "=" <num> } ";"
 	if( current_token == constsym ) {
 		
+		char* id;
+		int num;
+		
 		// Loop until no more constants declared (so until semicolon)
 		// Must see identifier, equals sign, then a number
-		while( current_token == commasym ) {
+		do {
 			
 			get_next_t();
 			if( current_token != identsym ) ; // raise error
+			strcpy( id, identOrNum );
 			get_next_t();
 			
 			if( current_token != eqsym ) ; // raise error
 			get_next_t();
 			
 			if( current_token != numbersym ) ; // raise error
+			num = atoi(identOrNum);
 			get_next_t();
-		}
+			
+			add_symbol(1, id, num, 0, 0);
+			num_symbols++;
+			
+		} while( current_token == commasym )
 		
 		if( current_token != semicolonsym ) ; // raise error
 		get_next_t();
@@ -159,13 +168,21 @@ void block(){
 	// EBSF: "var" <id> { "," <id> } ";"
 	if( current_token == varsym ) {
 		
-		while( current_token == commasym ) {
+		int num_vars = 0;
+		do {
 			get_next_t();
 			if( current_token != identsym ) ; // raise error
+			strcpy( id, identOrNum );
 			get_next_t();
-		}
+			
+			add_symbol(2, id, 0, 0, 3 + num_vars);
+			num_symbols++;
+			num_vars++;
+			
+		} while( current_token == commasym )
 		
 		if( current_token != semicolonsym ) ; // raise error
+		emit(INC, 0, 4 + num_vars);
 		get_next_t();
 	}
 	
@@ -382,11 +399,11 @@ void expression(){
 
 // Gets the next token in the tokenArray and advances the pointer
 void get_next_t() {
+	// current_token = lex();
 	current_token = tokenArray[tokenPtr];
 	tokenPtr ++;
 }
 
-// Print an error statement out and exit the program.
 // Gabriela, Terek, Austin
 void err(int n){
 	switch(n) {
@@ -513,6 +530,22 @@ void emit(int op, int l, int m){
 	
 }
 
-void add_symbol(int k, char name[], int val, int addr){
+// Add constants or variables to the symbol table (procedures not in tiny PL/0)
+// If the symbol already exists, raise error
+void add_symbol(int k, char name[], int num, int level, int modifier){
 	
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
