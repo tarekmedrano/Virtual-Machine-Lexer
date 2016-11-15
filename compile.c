@@ -387,99 +387,113 @@ void get_next_t() {
 }
 
 // Print an error statement out and exit the program.
-// "Page 5 of the following link should include all of the errors we need" - Austin
-// http://www.cs.ucf.edu/~wocjan/Teaching/2016_Fall/cop3402/2_homeworks/IntermediateCodeGeneration.pdf
-// I'm filling in the errors that I see are possible, will need editing for usability after. - Gabriela
+// Gabriela, Terek, Austin
 void err(int n){
 	switch(n) {
 		
 		case 1:
 			printf("Error: Use = instead of :=.\n");
-			break;
+			exit(0);
 			
 		case 2:
 			printf("Error: = must be followed by a number.\n");
-			break;
+			exit(0);
 			
 		case 3: 
 			printf("Error: Identifier should be followed by =");
-			break;
+			exit(0);
 			
 		case 4:
 			printf("Error: const, var, procedure must be followed by identifier.\n");
-			break;
+			exit(0);
 			
 	    case 5:
 			printf("Error: Semicolon or comma missing.\n");
-			break;
+			exit(0);
 			
 		case 6:
 			printf("Error: Incorrect symbol after procedure declaration.");
-			break;
+			exit(0);
 			
 	    case 7:
 			printf("Error: Statement expected");
-			break;
+			exit(0);
 			
 	    case 8:
 			printf("Error: Incorrect symbol after statement part in block.\n");
-			break;
+			exit(0);
 			
 		case 9:
 			printf("Error: Period expected.\n");
-			break;
+			exit(0);
 			
 	    case 10:
 			printf("Error: Semicolon between statements missing.\n");
-			break;
+			exit(0);
 			
 		case 11:
 			printf("Error: Undeclared identifier.\n");
-			break;
+			exit(0);
 			
 		case 12:
 			printf("Error: Assignment to constant or procedure is not allowed. \n");
-			break;
+			exit(0);
 			
 	    case 13:
 	        printf("Error: Assignment operater expected. \n");
-		    break;
+			exit(0);
 			
 		case 14:
 		    printf("Error: call must be followed by an identifier. \n");
+			exit(0);
 		
 		case 15:
 			printf("Error: Call of a constant or variable is meaningless.\n");
+			exit(0);
 			
 		case 16:
 			printf("Error: then expected \n");
+			exit(0);
 		
 		case 17:
 			printf("Error: Semicolon or } expected.\n");
+			exit(0);
 		
 		case 18:
 			printf("Error: do expected.\n");
+			exit(0);
 			
 		case 19:
 			printf("Error: Incorrect symbol following statement\n");
+			exit(0);
 		
 		case 20:
 			printf("Error: Relational operator expected.\n");
+			exit(0);
 		
 		case 21:
 			printf("Error: Relational operator expected.\n");
+			exit(0);
 		
 		case 22:
 			printf("Error: Right parenthesis missing. \n");
+			exit(0);
 		
 		case 23:
 			printf("The preceding factor cannot begin with this symbol.\n");
+			exit(0);
 		
 		case 24:
 			printf("An expression cannot begin with this symbol.\n");
+			exit(0);
 		
 		case 25:
 			printf("This number is too large.\n");
+			exit(0);
+		
+		default:
+			printf("Unknown error.\n");
+			exit(0);
 	}
 }
 
