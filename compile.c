@@ -22,8 +22,6 @@ intsym = 29, procsym = 30, outsym = 31, insym = 32, elsesym = 33};
 
 
 
-
-
 typedef struct{
   char type[3];
   char val[12];
@@ -249,8 +247,51 @@ void get_next_t() {
 
 // Fill this function with all the different errors we can get
 // use switches preferably?
+//I'm filling in the errors that I see are possible, will need editing for usability after. - Gabriela
 void err(int n){
-	
+	switch(n) {
+		case 1:
+			printf("Error: File must end in a period.");
+			break;
+		case 2:
+			printf("Error: Missing identifier.);
+			break;
+		case 3: 
+			printf("Error: Identifier should be followed by =);
+			break;
+		case 4:
+			printf("Error: = should be followed by a number.);
+			break;
+	        case 5:
+			printf("Error: Declaration must end with ;);
+			break;
+		case 6:
+			printf("Error: Missing procedure declaration.);
+			break;
+	        case 7:
+			printf("Error: No ; at the end of block.);
+			break;
+	        case 8:
+			printf("Error: Missing := in statement.);
+			break;
+		case 9:
+			printf("Error: Begin must be closed with end.);
+			break;
+	        case 10:
+			printf("Error: if must be followed by then.);
+			break;
+		case 11:
+			printf("Error: while must be followed by do.);
+			break;
+		case 12:
+			printf("Error: Relational operator missing in conditional statement.);
+			break;
+	        case 13:
+	                printf("Error: Left ( has not been closed.);
+		        break;
+		case 14:
+		        printf("Error: Identifier, (, or number expected.);
+	}
 }
 
 // Tarek
