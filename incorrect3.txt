@@ -1,0 +1,7 @@
+const ;
+var a, b, y;
+begin
+	a := x;
+	if ( a = 5 ) then
+	b := y;
+end .

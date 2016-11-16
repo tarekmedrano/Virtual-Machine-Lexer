@@ -1,0 +1,10 @@
+var x, w;
+begin
+    x := z;
+    read w;
+    if w > x then
+        w := w + 1
+    else
+        e := x;
+    write w
+end.

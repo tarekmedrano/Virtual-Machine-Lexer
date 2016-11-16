@@ -1,0 +1,4 @@
+var x, y;
+if ( x := 9 ) then
+	x:= 9
+.
