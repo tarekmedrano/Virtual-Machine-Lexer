@@ -533,7 +533,7 @@ void emit(int op, int l, int m){
 // Add constants or variables to the symbol table (procedures not in tiny PL/0)
 // If the symbol already exists, raise error
 void add_symbol(int k, char name[], int num, int level, int modifier){
-	
+	//jonathan -> working on this right now
 }
 
 
