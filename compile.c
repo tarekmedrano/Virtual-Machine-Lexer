@@ -114,6 +114,9 @@ void factor();
 void expression();
 char* tokenToString(int token);
 
+// "I don't understand what parser is doing. The while loop is scanning integers from a file,
+// but the file we read in is PL/0 code. Also it should start at program() not block()" -Austin
+//
 // our main function for the parser/code generator
 // - Tarek
 void Parser(int flag){
@@ -693,8 +696,21 @@ char* tokenToString(int token){
     }
 }
 
-
-
+// Main
 int main( int argc, char** argv ) {
-	// Austin - "Working on this at the moment"
+	
+	char fin[30];
+	char fout[30];
+	
+	if(argc != 3) {
+		printf("Need input and output filenames.\n");
+		return 0;
+	}
+	strcpy( fin, *argv[1] );
+	strcpy( fout, *argv[2] );
+	
+	// Start parsing
+	parser( fin, fout );
+	
+	return 0;
 }
