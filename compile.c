@@ -11,17 +11,11 @@
 #include <stdbool.h>
 #include <string.h>
 #include <ctype.h>
+
+#include "lexer.h"
+
 #define MAX_CODE_LENGTH 500
 #define MAX_SYMBOL_TABLE_SIZE 10000
-
-
-
-typedef enum {  nulsym = 1, identsym, numbersym, plussym, minussym,
-	multsym, slashsym, oddsym, eqsym, neqsym, lessym, leqsym,
-	gtrsym, geqsym, lparentsym, rparentsym, commasym, semicolonsym,
-	periodsym, becomessym, beginsym, endsym, ifsym, thensym,
-	whilesym, dosym, callsym, constsym, varsym, procsym, writesym,
-	readsym , elsesym } token_type;
 
 //if we put the operations here we wont get any more errors when emitting
 typedef enum
@@ -90,14 +84,14 @@ int cx = 0;
 int curr_lvl = 0;
 
 int tokenArray[MAX_CODE_LENGTH];
-int current_token;
+Token* current_token;
 int tokenIndex = 0;
 int tokenPtr = 0;
 
 FILE* Parserin;
 
 void get_next_t(); // turned this to a void, was int
-void add_symbol(int k, char name[], int num, int level, int modifier);
+void add_symbol(int k, char *name, int num, int level, int modifier);
 void err(int n);
 
 //Generates the PL/0 code line w/ the input fields.
@@ -116,53 +110,21 @@ char* tokenToString(int token);
 
 // our main function for the parser/code generator
 // - Tarek
-void Parser(int flag){
+void Parser(int flag, char* inputFile, char* outputFile){
 	int i, temp;
 	 // not sure how to define files to take in variable
 	 // file names, someone fix this please. -Tarek
-	input = fopen(" ", "r");
-	output = fopen(" ", "w");
-
-	while(fscanf(input, "%d", &temp) != EOF){
-		tokenArray[tokenIndex++] = temp;
-		
-		if(temp == identsym){
-			fscanf(input, "%d", &temp);
-			
-			tokenArray[tokenIndex++] = temp;
-			fprintf(output, "identsym.%d", temp);
-			
-			continue;
-		}
 	
-		else if(temp == numbersym)
-		{
-			fscanf(input, "%d", &temp);
-			tokenArray[tokenIndex++] = temp;
-			fprintf(output, "numbersym.%d", temp);
-			
-			continue;
-		}
-		
-		fprintf(output, "%s", tokenToString(temp));
-			
-	}
+	initalizeLexer(inputFile);
 	
-	block();
+	FILE* output = fopen(outputFile, "w");
 	
-	if(temp != periodsym)
-	{
-		fprintf(output,"Expected period at end of program\n");
-		
-		return;		
-	}
-	
-	fprintf(output, "\n No errors, program is syntactically correct!");
+	program();
 	
 	// need to also include the generated code still -----
 	
 	
-	fclose(input);
+	//fclose(input);
 	fclose(output);
 
 }
@@ -173,7 +135,8 @@ void program(){
 	
 	get_next_t();
 	block();
-	if( current_token != periodsym ) ; // raise error
+	if( current_token->type != periodsym )
+		err(9); // raise error
 }
 
 // Austin
@@ -182,54 +145,64 @@ void block(){
 	
 	// Constant declaration
 	// EBSF: "const" <id> "=" <num> { "," <id> "=" <num> } ";"
-	if( current_token == constsym ) {
-		
+	if( current_token->type == constsym ) {
 		// Loop until no more constants declared (so until semicolon)
 		// Must see identifier, equals sign, then a number
-		while( current_token == commasym ) {
+		while (1) {
+			char* ident;
+			int val;
 			
 			get_next_t();
-			if( current_token != identsym ) err(4); // raise error
-			get_next_t();
+			if( current_token->type != identsym ) err(4); // raise error
+			strcpy(ident,current_token->string);
 			
-			if( current_token != eqsym ) err(3); // raise error
 			get_next_t();
+			if( current_token->type != eqsym ) err(3); // raise error
 			
-			if( current_token != numbersym ) err(2) ; // raise error
 			get_next_t();
+			if( current_token->type != numbersym ) err(2) ; // raise error
+			val = atoi(current_token->string);
+			
+			add_symbol(0, ident, val, 0, 0);
+			
+			get_next_t();
+			if( current_token->type != commasym ) break;
 		}
 		
-		if( current_token != semicolonsym ) err(5) ; // raise error
+		if( current_token->type != semicolonsym ) err(5) ; // raise error
 		get_next_t();
 	}
 	
 	// Variable declaration
 	// EBSF: "var" <id> { "," <id> } ";"
-	if( current_token == varsym ) {
+	if( current_token->type == varsym ) {
 		
-		while( current_token == commasym ) {
+		get_next_t();
+		if( current_token->type != identsym ) err(4);
+		get_next_t();
+		while( current_token->type == commasym ) {
 			get_next_t();
-			if( current_token != identsym ) err(4); // raise error
+			if( current_token->type != identsym ) err(4); // raise error
 			get_next_t();
 		}
 		
-		if( current_token != semicolonsym ) err(5) ; // raise error
+		if( current_token->type != semicolonsym ) err(5) ; // raise error
 		get_next_t();
 	}
 	
 	// Procedure (Note: unused in tiny PL/0)
 	// EBSF: "proc" { <id> ";" <block> ";" }
-	while( current_token == procsym ) {
+	while( current_token->type == procsym ) {
 		
 		get_next_t();
-		if( current_token != identsym ) err(4); // raise error
+		if( current_token->type != identsym ) err(4); // raise error
 		get_next_t();
-		if( current_token != semicolonsym ) err(5); // raise error
+		if( current_token->type != semicolonsym ) err(5); // raise error
 		get_next_t();
 		
 		block();
 		
-		if( current_token != semicolonsym ) err(5); // raise error
+		if( current_token->type != semicolonsym ) err(5); // raise error
 		get_next_t();
 	}
 	
@@ -238,65 +211,72 @@ void block(){
 }
 
 // jerasimos
-void statement(){
+void statement() {
 	
-	if(current_token == identsym){
+	if(current_token->type == identsym){
 		get_next_t();
-		if( current_token != becomessym )err(19) ; // raise error
+		if( current_token->type != becomessym ) err(19) ; // raise error
 		get_next_t();
 		expression();
 		return;
 		
-	} else if( current_token == callsym ) {
+	} else if( current_token->type == callsym ) {
 		get_next_t();
-		if( current_token != identsym )err(14) ; // raise error
+		if( current_token->type != identsym )err(14) ; // raise error
 		get_next_t();
 		return;
 		
-	} else if(current_token == beginsym){
+	} else if(current_token->type == beginsym){
 		get_next_t();
 		statement();
-		while(current_token == semicolonsym) {
+		while(current_token->type == semicolonsym) {
 			get_next_t();
 			statement();
 		}
-		if(current_token != endsym) err(26); // raise error
+		if(current_token->type != endsym) err(27); // raise error
 		get_next_t();
 		return;
 		
-	} else if(current_token == ifsym ){
+	} else if(current_token->type == ifsym ){
 		get_next_t();
 		condition();
-		if(current_token != thensym) err(16); // raise error
+		if(current_token->type != thensym) err(16); // raise error
+		get_next_t();
+		statement();
+		//get_next_t(); //semi colon?
+		if(current_token->type == elsesym) {
+			get_next_t();
+			statement();
+		}
+		return;
+		
+	} else if(current_token->type == whilesym) {
+		get_next_t();
+		condition();
+		if( current_token->type != dosym ) err(18) ; // raise error
 		get_next_t();
 		statement();
 		return;
 		
-	} else if(current_token == whilesym) {
+	} else if(current_token->type == readsym ){
 		get_next_t();
-		condition();
-		if( current_token != dosym ) err(18) ; // raise error
-		get_next_t();
-		statement();
-		return;
-		
-	} else if(current_token == readsym ){
-		get_next_t();
-		if(	current_token != oddsym) ; // raise error
+		if(	current_token->type != identsym) err(26); // raise error
 		get_next_t();
 		return;
 		
-	} else if(current_token == writesym){
+	} else if(current_token->type == writesym){
 		get_next_t();
-		if(	current_token != oddsym) ; // raise error
+		if(	current_token->type != identsym) err(26); // raise error
 		get_next_t();
 		return;
-	} 
+	} else {
+		
+	}
 }
 
 // jerasimos 
 void condition(){
-	if(	current_token == oddsym){
+	if(	current_token->type == oddsym){
 		get_next_t();
 		expression();
 		return;
@@ -314,7 +294,7 @@ void condition(){
 // Check that current_token is a relation symbol. If not, raise an error.
 bool rel_op(){
 	
-	switch(current_token){
+	switch(current_token->type){
 
 	case eqsym : // '='
 		return true;
@@ -346,8 +326,8 @@ bool rel_op(){
 void term(){
 	int mulop;
 	factor();
-	while(current_token == multsym || current_token == slashsym){
-		mulop = current_token;
+	while(current_token->type == multsym || current_token->type == slashsym){
+		mulop = current_token->type;
 		get_next_t();
 		factor();
 		if(mulop == multsym)
@@ -362,14 +342,14 @@ void term(){
 // Tarek
 void factor(){
 	int i;
-	if(current_token == identsym){
+	if(current_token->type == identsym){
 		
 		get_next_t();
 		
 		// use this to fetch the value of the identifier from the 
 		// symbol table
-		for(i = 0; i< symbol_cnt; i++){
-			if(symbol_table[i].name == current_token){
+		for(i = 0; i< num_symbols; i++){
+			if(symbol_table[i].name == current_token->string){
 				
 				// if its a constant we emit a lit
 				if(symbol_table[i].kind == 1){
@@ -386,27 +366,27 @@ void factor(){
 			}	
 		}
 		
-		get_next_t();
+		//get_next_t();
 	}
 	
 	// otherwise if we find a numbersym, emit the number literal
-	else if(current_token == numbersym){
+	else if(current_token->type == numbersym){
 		get_next_t();
-		emit(lit, 0, current_token);
-		get_next_t();
+		emit(lit, 0, current_token->type);
+		//get_next_t();
 	}
 	
 	
 	// or if we find a left paren, evaluate it as a new expression
-	else if(current_token == lparentsym){
+	else if(current_token->type == lparentsym){
 		get_next_t();
 		expression(); // possible edit after experssion() finished
 		
-		if(current_token != rparentsym){
+		if(current_token->type != rparentsym){
 			err(13);
 		}
 		
-		get_next_t();	
+		//get_next_t();	
 	}
 	
 	// otherwise we have an error
@@ -419,10 +399,10 @@ void factor(){
 
 // jerasimos
 void expression(){
-	if(current_token == plussym || current_token == minussym)
+	if(current_token->type == plussym || current_token->type == minussym)
 		get_next_t();
 	term();
-	while(current_token == plussym || current_token == minussym){
+	while(current_token->type == plussym || current_token->type == minussym){
 		get_next_t();
 		term();
 	}
@@ -430,9 +410,8 @@ void expression(){
 
 // Gets the next token in the tokenArray and advances the pointer
 void get_next_t() {
-	// current_token = lex();
-	current_token = tokenArray[tokenPtr];
-	tokenPtr ++;
+	current_token = lex();
+	printf("%s \n",current_token->string);
 }
 
 // Gabriela, Terek, Austin
@@ -452,7 +431,7 @@ void err(int n){
 			exit(0);
 			
 		case 4:
-			printf("Error: const, var, procedure must be followed by identifier.\n");
+			printf("Error: const, var, procedure, read, write must be followed by identifier.\n");
 			exit(0);
 			
 	    case 5:
@@ -538,6 +517,14 @@ void err(int n){
 		case 25:
 			printf("This number is too large.\n");
 			exit(0);
+			
+		case 26:
+			printf("Error: read, write must be followed by identifier.\n");
+			exit(0);
+			
+		case 27:
+			printf("Error: end expected.\n");
+			exit(0);
 		
 		default:
 			printf("Unknown error.\n");
@@ -564,7 +551,7 @@ void emit(int op, int l, int m){
 // Add constants or variables to the symbol table (procedures not in tiny PL/0)
 // If the symbol already exists, raise error
 // jonathan
-void add_symbol(int k, char name[], int num, int level, int modifier){
+void add_symbol(int k, char *name, int num, int level, int modifier){
 	int i = 0;
 	for (i=0; i<num_symbols; i++) {
 		symbol s = symbol_table[i];
@@ -581,7 +568,7 @@ void add_symbol(int k, char name[], int num, int level, int modifier){
 	s->level = level;
 	s->addr = modifier;
 
-	symbol_table[num_symbols] = s;
+	symbol_table[num_symbols] = *s;
 	num_symbols++;
 }
 
@@ -697,6 +684,13 @@ char* tokenToString(int token){
 
 int main( int argc, char** argv ) {
 	// Austin - "Working on this at the moment"
+	
+	argc--; *argv++; //dont need first argument (executable name)
+	char* inputFile = *argv++;
+	char* outputFile = *argv++;
+	
+	Parser(0,inputFile, outputFile);
+	
 }
 
 

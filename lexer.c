@@ -10,18 +10,7 @@
 #include <string.h>
 #include <ctype.h>
 
-// List of the tokens we are responsible for handling
-typedef enum {  nulsym = 1, identsym, numbersym, plussym, minussym,
-	multsym, slashsym, oddsym, eqsym, neqsym, lessym, leqsym,
-	gtrsym, geqsym, lparentsym, rparentsym, commasym, semicolonsym,
-	periodsym, becomessym, beginsym, endsym, ifsym, thensym,
-	whilesym, dosym, callsym, constsym, varsym, procsym, writesym,
-	readsym , elsesym } token_type;
-
-union lval {
-	char *id;
-	int num; 
-} lval; 
+#include "lexer.h"
 
 char *tokens;
 int t_pointer;
@@ -32,7 +21,7 @@ int terminate;
 int printSource;
 FILE* file;
 
-token_type lex();
+Token* newToken(char* sbuf, token_type t);
 int startComment();
 void tokenSym( token_type t );
 void inputChar( char c );
@@ -40,8 +29,15 @@ int wordPrint( int p, int *ill );
 void inputGuider( int i );
 void condPrintf( char c );
 
+Token* newToken(char* sbuf, token_type t) {
+	Token *token = malloc(sizeof(Token));
+	token->type = t;
+	strcpy(token->string,sbuf);
+	return token;
+}
+
 // Lex the input and output it before comments are removed
-token_type lex() {
+Token* lex() {
 	
 	char c, d;
 	int saw_comment;
@@ -73,7 +69,7 @@ token_type lex() {
 		if( (d = getc(file)) == '*' ) {
 			saw_comment = 1;
 			if( !startComment() ) {
-				return nulsym; // EOF while in comment
+				return newToken("/",nulsym); // EOF while in comment
 			}
 			c = getc(file);
 		} else
@@ -105,7 +101,7 @@ token_type lex() {
 	}
 	
 	// End of the file, stop lexxing
-	if (c == EOF) return nulsym;
+	if (c == EOF) return newToken("",nulsym);
 
 	// Identifier or reserved word
 	if (isalpha(c)) {
@@ -129,37 +125,37 @@ token_type lex() {
 		// check if any of these identifiers were actually meant
 		// to be reserved words instead
 
-		if(strcmp(sbuf, "begin") == 0) return beginsym;
+		if(strcmp(sbuf, "begin") == 0) return newToken(sbuf,beginsym);
 
-		if(strcmp(sbuf, "null") == 0) return nulsym;
+		if(strcmp(sbuf, "null") == 0) return newToken(sbuf,nulsym);
 
-		if(strcmp(sbuf, "call") == 0) return callsym;
+		if(strcmp(sbuf, "call") == 0) return newToken(sbuf,callsym);
 
-		if(strcmp(sbuf, "const") == 0) return constsym;
+		if(strcmp(sbuf, "const") == 0) return newToken(sbuf,constsym);
 
-		if(strcmp(sbuf, "do") == 0) return dosym;
+		if(strcmp(sbuf, "do") == 0) return newToken(sbuf,dosym);
 
-		if(strcmp(sbuf, "else") == 0) return elsesym;
+		if(strcmp(sbuf, "else") == 0) return newToken(sbuf,elsesym);
 
-		if(strcmp(sbuf, "end") == 0) return endsym;
+		if(strcmp(sbuf, "end") == 0) return newToken(sbuf,endsym);
 
-		if(strcmp(sbuf, "if") == 0) return ifsym;
+		if(strcmp(sbuf, "if") == 0) return newToken(sbuf,ifsym);
 
-		if(strcmp(sbuf, "odd") == 0) return oddsym;
+		if(strcmp(sbuf, "odd") == 0) return newToken(sbuf,oddsym);
 
-		if(strcmp(sbuf, "procedure") == 0) return procsym;
+		if(strcmp(sbuf, "procedure") == 0) return newToken(sbuf,procsym);
 
-		if(strcmp(sbuf, "read") == 0) return readsym;
+		if(strcmp(sbuf, "read") == 0) return newToken(sbuf,readsym);
 
-		if(strcmp(sbuf, "then") == 0) return thensym;
+		if(strcmp(sbuf, "then") == 0) return newToken(sbuf,thensym);
 
-		if(strcmp(sbuf, "var") == 0) return varsym;
+		if(strcmp(sbuf, "var") == 0) return newToken(sbuf,varsym);
 
-		if(strcmp(sbuf, "while") == 0) return whilesym;
+		if(strcmp(sbuf, "while") == 0) return newToken(sbuf,whilesym);
 
-		if(strcmp(sbuf, "write") == 0) return writesym;
+		if(strcmp(sbuf, "write") == 0) return newToken(sbuf,writesym);
 		
-		return identsym;
+		return newToken(sbuf,identsym);
 	}
 	
 	// Digits
@@ -191,7 +187,7 @@ token_type lex() {
 
 		*p = '\0';
 		
-		return numbersym;  	
+		return newToken(sbuf,numbersym);  	
 	}
 	
 	// Reserved symbol or illegal token
@@ -202,55 +198,55 @@ token_type lex() {
 		 inputGuider( 1 );
 		 inputChar(c);
 		 
-		 return plussym;
+		 return newToken("+",plussym);
 			
 		case '*' :
 		 inputGuider( 1 );
 		 inputChar(c);
 		 
-		 return multsym;
+		 return newToken("*",multsym);
 			
 		case '(' :
 		 inputGuider( 1 );
 		 inputChar(c);
 		 
-		 return lparentsym;
+		 return newToken("(",lparentsym);
 			
 		case ')' :
 		 inputGuider( 1 );
 		 inputChar(c);
 		 
-		 return rparentsym;
+		 return newToken(")",rparentsym);
 			
 		case '/' :
 		 inputGuider( 1 );
 		 inputChar(c);
 		 
-		 return slashsym;
+		 return newToken("/",slashsym);
 			
 		case '-' :
 		 inputGuider( 1 );
 		 inputChar(c);
 		 
-		 return minussym;
+		 return newToken("-",minussym);
 			
 		case ',' :
 		 inputGuider( 1 );
 		 inputChar(c);
 		 
-		 return commasym;
+		 return newToken(",",commasym);
 			
 		case ';' :
 		 inputGuider( 1 );
 		 inputChar(c);
 	
-		 return semicolonsym;
+		 return newToken(";",semicolonsym);
 			
 		case '.' :
 		 inputGuider( 1 );
 		 inputChar(c);
 		 
-		 return periodsym;
+		 return newToken(".",periodsym);
 			
 		case '<' :
 		 inputGuider( 2 );
@@ -261,14 +257,14 @@ token_type lex() {
 			 inputGuider( 2 );
 			 inputChar(c);
 			 
-			 return leqsym;
+			 return newToken("<=",leqsym);
 		 }
 		 //Undo 22 in inputGuide to 10
 		 pointer -= 2; inputGuider( 1 );
 		 pointer += 1; inputGuider( 0 );
 		 
 		 ungetc(c, file);
-		 return lessym;     	    	
+		 return newToken("<",lessym);     	    	
 			
 		case '>' :
 		 inputGuider( 2 );
@@ -279,14 +275,14 @@ token_type lex() {
 			 inputGuider( 2 );
 			 inputChar(c);
 			 
-			 return geqsym;
+			 return newToken(">=",geqsym);
 		 }
 		 //Undo 22 in inputGuide to 10
 		 pointer -= 2; inputGuider( 1 );
 		 pointer += 1; inputGuider( 0 );
 		 
 		 ungetc(c, file);
-		 return gtrsym;
+		 return newToken(">",gtrsym);
 			
 		case '!' :
 		 inputGuider( 2 );
@@ -297,7 +293,7 @@ token_type lex() {
 			 inputGuider( 2 );
 			 inputChar(c);
 			 
-			 return neqsym;
+			 return newToken("!=",neqsym);
 		 }
 		 //Undo 22 in inputGuide to 40
 		 pointer -= 2; inputGuider( 4 );
@@ -315,7 +311,7 @@ token_type lex() {
 			 inputGuider( 2 );
 			 inputChar(c);
 			 
-			 return becomessym;
+			 return newToken(":=",becomessym);
 		 }
 		 //Undo 22 in inputGuide to 40
 		 pointer -= 2; inputGuider( 4 );
@@ -328,7 +324,7 @@ token_type lex() {
 		 inputGuider( 1 );
 		 inputChar(c);
 		 
-		 return eqsym;
+		 return newToken("=",eqsym);
 		 
 		 
 		 
@@ -475,6 +471,20 @@ void condPrintf( char ch ) {
 		printf("%c", ch);
 }
 
+void initalizeLexer(char* fname) {
+
+	file = fopen(fname,"r");
+	terminate = 0;
+
+	tokens = malloc( sizeof(char)*2500 );
+	input = malloc( sizeof(char)*2500 );
+	input_guide = malloc( sizeof(int)*2500 );
+	t_pointer = 0;
+	pointer = 0;
+}
+
+//Commented out for use of Compile.c
+/* 
 
 int main( int argc, char** argv ) {
 	
@@ -509,7 +519,7 @@ int main( int argc, char** argv ) {
 	// Lex the input and print the input
   	if ( printSource) 
 		printf("\nsource code:\n-----------\n");
-	while ((tok=lex()) != nulsym) {
+	while ((tok=lex()->type) != nulsym) {
 		
 		// There was an error so stop the program
 		if (terminate) {
@@ -561,3 +571,6 @@ int main( int argc, char** argv ) {
 	
 	return 0;
 }
+*/
+
+
