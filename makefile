@@ -1,0 +1,2 @@
+compile:
+	gcc compile.c
