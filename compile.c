@@ -536,11 +536,9 @@ void add_symbol(int k, char name[], int num, int level, int modifier){
 	//jonathan -> working on this right now
 }
 
-
-
-
-
-
+int main( int argc, char** argv ) {
+	// Austin - "Working on this at the moment"
+}
 
 
 
