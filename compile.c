@@ -70,7 +70,7 @@ typedef struct{
   
 typedef struct{
   int kind;			// const = 1, var = 2, proc = 3
-  int name;			//name up to 12 chars
+  char name[12];	// name up to 12 chars
   int val;			// number (ascii val)
   int level;		// L level 
   int addr;			// M address
@@ -563,8 +563,26 @@ void emit(int op, int l, int m){
 
 // Add constants or variables to the symbol table (procedures not in tiny PL/0)
 // If the symbol already exists, raise error
+// jonathan
 void add_symbol(int k, char name[], int num, int level, int modifier){
-	//jonathan -> working on this right now
+	int i = 0;
+	for (i=0; i<num_symbols; i++) {
+		symbol s = symbol_table[i];
+		if (strcmp(s.name,name) == 0) {
+			//throw error
+			exit(0);
+		}
+	}
+	
+	symbol *s = malloc(sizeof(symbol));
+	s->kind = k;
+	strcpy(s->name,name);
+	s->val = num;
+	s->level = level;
+	s->addr = modifier;
+
+	symbol_table[num_symbols] = s;
+	num_symbols++;
 }
 
 
