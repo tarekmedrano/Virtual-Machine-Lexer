@@ -114,58 +114,36 @@ void factor();
 void expression();
 char* tokenToString(int token);
 
-// our main function for the parser/code generator
-// - Tarek
-void Parser(int flag){
-	int i, temp;
-	 // not sure how to define files to take in variable
-	 // file names, someone fix this please. -Tarek
-	input = fopen(" ", "r");
-	output = fopen(" ", "w");
-
-	while(fscanf(input, "%d", &temp) != EOF){
-		tokenArray[tokenIndex++] = temp;
-		
-		if(temp == identsym){
-			fscanf(input, "%d", &temp);
-			
-			tokenArray[tokenIndex++] = temp;
-			fprintf(output, "identsym.%d", temp);
-			
-			continue;
-		}
+// Main function for parsing
+void parser( char* finput, char* foutput ){
 	
-		else if(temp == numbersym)
-		{
-			fscanf(input, "%d", &temp);
-			tokenArray[tokenIndex++] = temp;
-			fprintf(output, "numbersym.%d", temp);
-			
-			continue;
-		}
-		
-		fprintf(output, "%s", tokenToString(temp));
-			
-	}
+	tokens = malloc( sizeof(char)*2500 );
+	input = malloc( sizeof(char)*2500 );
+	input_guide = malloc( sizeof(int)*2500 );
+	t_pointer = 0;
+	pointer = 0;
+	FILE* paresOut;
 	
-	block();
+	file = fopen( finput, "r"); //global in lex
+	paresOut = fopen( foutput, "w");
 	
-	if(temp != periodsym)
-	{
-		fprintf(output,"Expected period at end of program\n");
-		
-		return;		
-	}
+	// Start program
+	program();
+	printf("No errors, program is syntactically correct!");
 	
-	fprintf(output, "\n No errors, program is syntactically correct!");
+	// Write to output
+	//
 	
-	// need to also include the generated code still -----
+	free(input);
+	free(tokens);
+	free(input_guide);
+	fclose(file);
+	fclose(parseOut);
 	
+	return 0;
 	
-	fclose(input);
-	fclose(output);
-
 }
+
 
 // Austin
 // Get token, call block(), end on period
@@ -184,22 +162,31 @@ void block(){
 	// EBSF: "const" <id> "=" <num> { "," <id> "=" <num> } ";"
 	if( current_token == constsym ) {
 		
+		char id[12];
+		int num;
+		
 		// Loop until no more constants declared (so until semicolon)
 		// Must see identifier, equals sign, then a number
-		while( current_token == commasym ) {
+		do {
 			
 			get_next_t();
-			if( current_token != identsym ) err(4); // raise error
+			if( current_token != identsym ) err(4);
+			strcpy( id, tokenStr );
 			get_next_t();
 			
-			if( current_token != eqsym ) err(3); // raise error
+			if( current_token != eqsym ) err(3);
 			get_next_t();
 			
-			if( current_token != numbersym ) err(2) ; // raise error
+			if( current_token != numbersym ) err(2);
+			num = atoi(tokenStr);
 			get_next_t();
-		}
+			
+			add_symbol(1, id, num, 0, 0);
+			num_symbols++;
+			
+		} while( current_token == commasym )
 		
-		if( current_token != semicolonsym ) err(5) ; // raise error
+		if( current_token != semicolonsym ) err(5);
 		get_next_t();
 	}
 	
@@ -207,13 +194,21 @@ void block(){
 	// EBSF: "var" <id> { "," <id> } ";"
 	if( current_token == varsym ) {
 		
-		while( current_token == commasym ) {
+		int num_vars = 0;
+		do {
 			get_next_t();
-			if( current_token != identsym ) err(4); // raise error
+			if( current_token != identsym ) err(4);
+			strcpy( id, tokenStr );
 			get_next_t();
-		}
+			
+			add_symbol(2, id, 0, 0, 3 + num_vars);
+			num_symbols++;
+			num_vars++;
+			
+		} while( current_token == commasym )
 		
-		if( current_token != semicolonsym ) err(5) ; // raise error
+		if( current_token != semicolonsym ) err(5);
+		emit(INC, 0, 4 + num_vars);
 		get_next_t();
 	}
 	
@@ -222,14 +217,14 @@ void block(){
 	while( current_token == procsym ) {
 		
 		get_next_t();
-		if( current_token != identsym ) err(4); // raise error
+		if( current_token != identsym ) err(4);
 		get_next_t();
-		if( current_token != semicolonsym ) err(5); // raise error
+		if( current_token != semicolonsym ) err(5);
 		get_next_t();
 		
 		block();
 		
-		if( current_token != semicolonsym ) err(5); // raise error
+		if( current_token != semicolonsym ) err(5);
 		get_next_t();
 	}
 	
@@ -319,7 +314,7 @@ bool rel_op(){
 	case eqsym : // '='
 		return true;
 	
-	case neqsym : //'<>' "This is correct" - Austin
+	case neqsym : //'<>'
 		return true;
 	
 	case lessym : // '<'
@@ -428,11 +423,17 @@ void expression(){
 	}
 }
 
-// Gets the next token in the tokenArray and advances the pointer
+// Lexes the next token, puts it in input string array, and increment input 
+// string pointer. Exit if EOF.
 void get_next_t() {
-	// current_token = lex();
-	current_token = tokenArray[tokenPtr];
-	tokenPtr ++;
+	
+	current_token = lex();
+	
+	if( current_token == nulsym )
+		exit(0);
+	
+	strcpy ( input_strings[ input_string_pointer ], tokenStr );
+	input_string_pointer++;
 }
 
 // Gabriela, Terek, Austin
@@ -693,12 +694,23 @@ char* tokenToString(int token){
     }
 }
 
-
-
+// Main
 int main( int argc, char** argv ) {
-	// Austin - "Working on this at the moment"
+	
+	char fin[30];
+	char fout[30];
+	
+	if(argc != 3) {
+		printf("Need input and output filenames.\n");
+		return 0;
+	}
+	strcpy( fin, *argv[1] );
+	strcpy( fout, *argv[2] );
+	
+	parser( fin, fout );
+	
+	return 0;
 }
-
 
 
 
