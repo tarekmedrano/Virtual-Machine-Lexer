@@ -108,9 +108,12 @@ void factor();
 void expression();
 char* tokenToString(int token);
 
+// "I don't understand what parser is doing. The while loop is scanning integers from a file,
+// but the file we read in is PL/0 code. Also it should start at program() not block()" -Austin
+//
 // our main function for the parser/code generator
 // - Tarek
-void Parser(int flag, char* inputFile, char* outputFile){
+void Parser(char* inputFile, char* outputFile){
 	int i, temp;
 	 // not sure how to define files to take in variable
 	 // file names, someone fix this please. -Tarek
@@ -680,23 +683,15 @@ char* tokenToString(int token){
     }
 }
 
-
-
+// Main
 int main( int argc, char** argv ) {
+
 	// Austin - "Working on this at the moment"
 	
 	argc--; *argv++; //dont need first argument (executable name)
 	char* inputFile = *argv++;
 	char* outputFile = *argv++;
 	
-	Parser(0,inputFile, outputFile);
-	
+	Parser(inputFile, outputFile);
+
 }
-
-
-
-
-
-
-
-
