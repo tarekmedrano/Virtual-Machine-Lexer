@@ -112,10 +112,59 @@ bool rel_op();
 void term();
 void factor();
 void expression();
+char* tokenToString(int token);
 
 // our main function for the parser/code generator
+// - Tarek
 void Parser(int flag){
+	int i, temp;
+	 // not sure how to define files to take in variable
+	 // file names, someone fix this please. -Tarek
+	input = fopen(" ", "r");
+	output = fopen(" ", "w");
+
+	while(fscanf(input, "%d", &temp) != EOF){
+		tokenArray[tokenIndex++] = temp;
+		
+		if(temp == identsym){
+			fscanf(input, "%d", &temp);
+			
+			tokenArray[tokenIndex++] = temp;
+			fprintf(output, "identsym.%d", temp);
+			
+			continue;
+		}
 	
+		else if(temp == numbersym)
+		{
+			fscanf(input, "%d", &temp);
+			tokenArray[tokenIndex++] = temp;
+			fprintf(output, "numbersym.%d", temp);
+			
+			continue;
+		}
+		
+		fprintf(output, "%s", tokenToString(temp));
+			
+	}
+	
+	block();
+	
+	if(temp != periodsym)
+	{
+		fprintf(output,"Expected period at end of program\n");
+		
+		return;		
+	}
+	
+	fprintf(output, "\n No errors, program is syntactically correct!");
+	
+	// need to also include the generated code still -----
+	
+	
+	fclose(input);
+	fclose(output);
+
 }
 
 // Austin
@@ -129,38 +178,28 @@ void program(){
 
 // Austin
 // Check for constant declaration, variable declaration, procedure, then do statement
-// Note: still needs errors
 void block(){
 	
 	// Constant declaration
 	// EBSF: "const" <id> "=" <num> { "," <id> "=" <num> } ";"
 	if( current_token == constsym ) {
 		
-		char* id;
-		int num;
-		
 		// Loop until no more constants declared (so until semicolon)
 		// Must see identifier, equals sign, then a number
-		do {
+		while( current_token == commasym ) {
 			
 			get_next_t();
-			if( current_token != identsym ) ; // raise error
-			strcpy( id, identOrNum );
+			if( current_token != identsym ) err(4); // raise error
 			get_next_t();
 			
-			if( current_token != eqsym ) ; // raise error
+			if( current_token != eqsym ) err(3); // raise error
 			get_next_t();
 			
-			if( current_token != numbersym ) ; // raise error
-			num = atoi(identOrNum);
+			if( current_token != numbersym ) err(2) ; // raise error
 			get_next_t();
-			
-			add_symbol(1, id, num, 0, 0);
-			num_symbols++;
-			
-		} while( current_token == commasym )
+		}
 		
-		if( current_token != semicolonsym ) ; // raise error
+		if( current_token != semicolonsym ) err(5) ; // raise error
 		get_next_t();
 	}
 	
@@ -168,21 +207,13 @@ void block(){
 	// EBSF: "var" <id> { "," <id> } ";"
 	if( current_token == varsym ) {
 		
-		int num_vars = 0;
-		do {
+		while( current_token == commasym ) {
 			get_next_t();
-			if( current_token != identsym ) ; // raise error
-			strcpy( id, identOrNum );
+			if( current_token != identsym ) err(4); // raise error
 			get_next_t();
-			
-			add_symbol(2, id, 0, 0, 3 + num_vars);
-			num_symbols++;
-			num_vars++;
-			
-		} while( current_token == commasym )
+		}
 		
-		if( current_token != semicolonsym ) ; // raise error
-		emit(INC, 0, 4 + num_vars);
+		if( current_token != semicolonsym ) err(5) ; // raise error
 		get_next_t();
 	}
 	
@@ -191,14 +222,14 @@ void block(){
 	while( current_token == procsym ) {
 		
 		get_next_t();
-		if( current_token != identsym ) ; // raise error
+		if( current_token != identsym ) err(4); // raise error
 		get_next_t();
-		if( current_token != semicolonsym ) ; // raise error
+		if( current_token != semicolonsym ) err(5); // raise error
 		get_next_t();
 		
 		block();
 		
-		if( current_token != semicolonsym ) ; // raise error
+		if( current_token != semicolonsym ) err(5); // raise error
 		get_next_t();
 	}
 	
@@ -211,14 +242,14 @@ void statement(){
 	
 	if(current_token == identsym){
 		get_next_t();
-		if( current_token != becomessym ) ; // raise error
+		if( current_token != becomessym )err(19) ; // raise error
 		get_next_t();
 		expression();
 		return;
 		
 	} else if( current_token == callsym ) {
 		get_next_t();
-		if( current_token != identsym ) ; // raise error
+		if( current_token != identsym )err(14) ; // raise error
 		get_next_t();
 		return;
 		
@@ -229,14 +260,14 @@ void statement(){
 			get_next_t();
 			statement();
 		}
-		if(current_token != endsym) ; // raise error
+		if(current_token != endsym) err(26); // raise error
 		get_next_t();
 		return;
 		
 	} else if(current_token == ifsym ){
 		get_next_t();
 		condition();
-		if(current_token != thensym) ; // raise error
+		if(current_token != thensym) err(16); // raise error
 		get_next_t();
 		statement();
 		return;
@@ -244,7 +275,7 @@ void statement(){
 	} else if(current_token == whilesym) {
 		get_next_t();
 		condition();
-		if( current_token != dosym ) ; // raise error
+		if( current_token != dosym ) err(18) ; // raise error
 		get_next_t();
 		statement();
 		return;
@@ -535,6 +566,116 @@ void emit(int op, int l, int m){
 void add_symbol(int k, char name[], int num, int level, int modifier){
 	//jonathan -> working on this right now
 }
+
+
+
+// we can use a tostring method to make the tokens into the names needed for parser func
+// -Tarek
+char* tokenToString(int token){
+    switch (token)
+    {
+        case (int) plussym:
+            return "plussym";
+            
+        case (int) minussym:
+            return "minussym";
+            
+        case (int) numbersym:
+            return "numbersym"; 
+            
+        case (int) multsym:
+            return "multsym";
+            
+        case (int) slashsym:
+            return "slashsym";
+            
+        case (int) lessym:
+            return "lesssym";
+            
+        case(int) eqsym:
+            return "eqsym";
+            
+        case (int) gtrsym:
+            return "gtrsym";
+            
+        case(int) geqsym:
+            return "geqsym";
+            
+        case(int) leqsym:
+            return "leqsym";
+            
+        case(int) becomessym:
+            return "becomessym";
+            
+        case(int) neqsym:
+            return "neqsym";
+            
+        case (int) lparentsym:
+            return "lparentsym";
+            
+        case (int) rparentsym:
+            return "rparentsym";
+            
+        case (int) commasym:
+            return "commasym";
+            
+        case (int) semicolonsym:
+            return "semicolonsym";
+            
+        case (int) periodsym:
+            return "periodsym";
+            
+        case (int) varsym:
+            return "varsym";
+            
+        case (int) beginsym:
+            return "beginsym";
+            
+        case (int) identsym:
+            return "identsym";
+            
+        case (int) endsym:
+            return "endsym";
+            
+        case (int) ifsym:
+            return "ifsym";
+            
+        case (int) thensym:
+            return "thensym";
+            
+        case (int) whilesym:
+            return "whilesym";
+            
+        case (int) dosym:
+            return "dosym";
+            
+        case (int) callsym:
+            return "callsym";
+            
+        case (int) constsym:
+            return "constsym";
+            
+        case (int) elsesym:
+            return "elsesym";
+            
+        case (int) procsym:
+            return "procsym";
+            
+        case (int) readsym:
+            return "readsym";
+            
+        case (int) writesym:
+            return "writesym";
+            
+        case (int) nulsym:
+            return "NULL";
+            
+        default:
+            return "ERR";
+    }
+}
+
+
 
 int main( int argc, char** argv ) {
 	// Austin - "Working on this at the moment"
