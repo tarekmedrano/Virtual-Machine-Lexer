@@ -259,7 +259,16 @@ Token* lex() {
 			 
 			 return newToken("<=",leqsym);
 		 }
-		 //Undo 22 in inputGuide to 10
+			
+		 if((c=getc(file)) == '>') {
+			 condPrintf(c);
+			 inputGuider( 2 );
+			 inputChar(c);
+			 
+			 return newToken("<>",neqsym);
+		 }
+			
+		 //Undo 2_ in inputGuide to 10
 		 pointer -= 2; inputGuider( 1 );
 		 pointer += 1; inputGuider( 0 );
 		 
@@ -284,10 +293,12 @@ Token* lex() {
 		 ungetc(c, file);
 		 return newToken(">",gtrsym);
 			
-		case '!' :
+		// If '!' is a recognized symbol in PL/0, uncomment this and rewrite it.
+		/*case '!' :
 		 inputGuider( 2 );
 		 inputChar(c);
 		 
+		 // Edited: "<>" is the symbol for not equals
 		 if((c=getc(file)) == '=')  {
 			 condPrintf(c);
 			 inputGuider( 2 );
@@ -301,7 +312,8 @@ Token* lex() {
 		 
 		 ungetc(c, file);
 		 break;
-		  
+		*/
+			
 		case ':' :
 		 inputGuider( 2 );
 		 inputChar(c);
