@@ -124,8 +124,10 @@ void Parser(char* inputFile, char* outputFile){
 	
 	program();
 	
-	// need to also include the generated code still -----
-	
+	// Generate PM/0 code
+	for( i = 0; i < cx; i++ ) {
+		fprintf(output, "%d %d %d\n", code[i].op, code[i].l, code[i].m );
+	}
 	
 	//fclose(input);
 	fclose(output);
@@ -156,23 +158,23 @@ void block(){
 			int val;
 			
 			get_next_t();
-			if( current_token->type != identsym ) err(4); // raise error
+			if( current_token->type != identsym ) err(4);
 			strcpy(ident,current_token->string);
 			
 			get_next_t();
-			if( current_token->type != eqsym ) err(3); // raise error
+			if( current_token->type != eqsym ) err(3);
 			
 			get_next_t();
-			if( current_token->type != numbersym ) err(2) ; // raise error
-			val = atoi(current_token->string);
+			if( current_token->type != numbersym ) err(2);
 			
-			add_symbol(0, ident, val, 0, 0);
+			val = atoi(current_token->string);
+			add_symbol(1, ident, val, 0, 0);
 			
 			get_next_t();
 			if( current_token->type != commasym ) break;
 		}
 		
-		if( current_token->type != semicolonsym ) err(5) ; // raise error
+		if( current_token->type != semicolonsym ) err(5);
 		get_next_t();
 	}
 	
@@ -182,30 +184,49 @@ void block(){
 		
 		get_next_t();
 		if( current_token->type != identsym ) err(4);
+		
+		add_symbol(2, current_token->string, 0, curr_lvl, 0);
 		get_next_t();
+		
 		while( current_token->type == commasym ) {
 			get_next_t();
-			if( current_token->type != identsym ) err(4); // raise error
+			if( current_token->type != identsym ) err(4);
+			
+			add_symbol(2, current_token->string, 0, curr_lvl, 0);
 			get_next_t();
 		}
 		
-		if( current_token->type != semicolonsym ) err(5) ; // raise error
+		emit( INC, 0, 4 + num_symbols );
+		
+		if( current_token->type != semicolonsym ) err(5);
 		get_next_t();
 	}
 	
-	// Procedure (Note: unused in tiny PL/0)
+	// Procedure
 	// EBSF: "proc" { <id> ";" <block> ";" }
 	while( current_token->type == procsym ) {
 		
 		get_next_t();
-		if( current_token->type != identsym ) err(4); // raise error
+		if( current_token->type != identsym ) err(4);
 		get_next_t();
-		if( current_token->type != semicolonsym ) err(5); // raise error
+		if( current_token->type != semicolonsym ) err(5);
 		get_next_t();
+		
+		emit( jmp, 0, 0 );
+		
+		int proc_start = cx;
+		code_struct temp;
+		temp.op = 0;
+		temp.l = curr_lvl;
+		temp.m = cx;
 		
 		block();
 		
-		if( current_token->type != semicolonsym ) err(5); // raise error
+		// Go back and write the modifier
+		temp.op = code[proc_start].op;
+		code[proc_start] = temp;
+		
+		if( current_token->type != semicolonsym ) err(5);
 		get_next_t();
 	}
 	
@@ -394,8 +415,7 @@ void factor(){
 	
 	// otherwise we have an error
 	else{
-		//print out an invalid factor error
-
+		err(30);
 	}
 }
 
@@ -556,11 +576,15 @@ void emit(int op, int l, int m){
 // jonathan
 void add_symbol(int k, char *name, int num, int level, int modifier){
 	int i = 0;
-	for (i=0; i<num_symbols; i++) {
+	for ( i=0; i<num_symbols; i++) {
 		symbol s = symbol_table[i];
+		
+		// Check name and level
 		if (strcmp(s.name,name) == 0) {
-			//throw error
-			exit(0);
+			if(s.level == curr_lvl) {
+				printf("Symbol name already in use\n");
+				exit(0);
+			}
 		}
 	}
 	
