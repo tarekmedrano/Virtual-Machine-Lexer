@@ -1,0 +1,25 @@
+Compiler Builder 15
+
+Austin Dragone
+-worked on parser, program, block, statement, main
+-fixed symbol table issues in most non-terminal symbol functions
+-made and ran test cases
+
+Gabriela Fisher
+-worked on expression, err, block
+-finished error calls in non-terminal symbol functions
+-made and ran test cases
+
+Jerasimos Strakosha
+-worked on statement, condition, rel_op, term, expression
+-ran test cases
+
+Tarek Medrano
+-worked on parser, factor, get_next_t, err, emit, tokenToString, main
+-ran test cases
+
+Jonathan Lacombe
+-worked on get_next_t,  add_symbol
+-changed the lexer to work with the parser
+-made and ran test cases
+
