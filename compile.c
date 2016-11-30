@@ -1,4 +1,3 @@
-
 // Compiler Builder 15
 // Austin Dragone
 // Gabriela Fisher
@@ -17,7 +16,6 @@
 #define MAX_CODE_LENGTH 500
 #define MAX_SYMBOL_TABLE_SIZE 10000
 
-//if we put the operations here we wont get any more errors when emitting
 typedef enum
 {
     hlt,
@@ -34,7 +32,7 @@ typedef enum
 
 typedef enum
 {
-    RET,
+    RET = 0,
     NEG,
     ADD,
     SUB,
@@ -71,11 +69,9 @@ typedef struct{
 } symbol;
 
 // All our global Vars
-
 symbol symbol_table[MAX_SYMBOL_TABLE_SIZE];
 int symIndex= 0;
 int symAddr = 3;
-// keep track of symbols in symbol table?
 int num_symbols = 0;
 
 // Code array
@@ -102,29 +98,27 @@ void program();
 void statement();
 void block();
 void condition();
-bool rel_op();
+int rel_op();
 void term();
 void factor();
 void expression();
 char* tokenToString(int token);
+int find_symbol( char* ident );
 
-// "I don't understand what parser is doing. The while loop is scanning integers from a file,
-// but the file we read in is PL/0 code. Also it should start at program() not block()" -Austin
-//
-// our main function for the parser/code generator
-// - Tarek
+// Parse the input and generate the PM/0 code it produces. If there is a lex or parser
+// error, stop the program.
 void Parser(char* inputFile, char* outputFile){
+	
 	int i, temp;
-	 // not sure how to define files to take in variable
-	 // file names, someone fix this please. -Tarek
 	
 	initalizeLexer(inputFile);
 	
 	FILE* output = fopen(outputFile, "w");
 	
+	// Start Parsing
 	program();
 	
-	// Generate PM/0 code
+	// Print the PM/0 code
 	for( i = 0; i < cx; i++ ) {
 		fprintf(output, "%d %d %d\n", code[i].op, code[i].l, code[i].m );
 	}
@@ -141,21 +135,32 @@ void program(){
 	get_next_t();
 	block();
 	if( current_token->type != periodsym )
-		err(9); // raise error
+		err(9);
+	
+	emit( sio, 0, 3 );
 }
 
 // Austin
 // Check for constant declaration, variable declaration, procedure, then do statement
 void block(){
 	
+	curr_lvl++;
+	int jumpAddress = cx;
+	int numVars = 0, numConsts = 0, numProcs = 0;
+	char* ident;
+	
+	// Change later
+	emit( jmp, 0, 0 );
+	
 	// Constant declaration
 	// EBSF: "const" <id> "=" <num> { "," <id> "=" <num> } ";"
 	if( current_token->type == constsym ) {
+		
 		// Loop until no more constants declared (so until semicolon)
 		// Must see identifier, equals sign, then a number
 		while (1) {
-			char* ident;
 			int val;
+			numConsts++;
 			
 			get_next_t();
 			if( current_token->type != identsym ) err(4);
@@ -167,7 +172,8 @@ void block(){
 			get_next_t();
 			if( current_token->type != numbersym ) err(2);
 			
-			val = atoi(current_token->string);
+			val = current_token->type;
+			
 			add_symbol(1, ident, val, 0, 0);
 			
 			get_next_t();
@@ -182,21 +188,25 @@ void block(){
 	// EBSF: "var" <id> { "," <id> } ";"
 	if( current_token->type == varsym ) {
 		
+		
 		get_next_t();
 		if( current_token->type != identsym ) err(4);
 		
 		add_symbol(2, current_token->string, 0, curr_lvl, 0);
 		get_next_t();
+		numVars++;
 		
+		// Loop if commasym
 		while( current_token->type == commasym ) {
 			get_next_t();
 			if( current_token->type != identsym ) err(4);
 			
 			add_symbol(2, current_token->string, 0, curr_lvl, 0);
 			get_next_t();
+			numVars++;
 		}
 		
-		emit( INC, 0, 4 + num_symbols );
+		//emit( INC, 0, 4 + num_symbols );
 		
 		if( current_token->type != semicolonsym ) err(5);
 		get_next_t();
@@ -206,91 +216,161 @@ void block(){
 	// EBSF: "proc" { <id> ";" <block> ";" }
 	while( current_token->type == procsym ) {
 		
+		numProcs++;
+		
 		get_next_t();
 		if( current_token->type != identsym ) err(4);
+		
+		strcpy(ident,current_token->string);
+		add_symbol( 3, ident, 0, curr_lvl, cx );
+		
 		get_next_t();
 		if( current_token->type != semicolonsym ) err(5);
 		get_next_t();
 		
-		emit( jmp, 0, 0 );
-		
-		int proc_start = cx;
-		code_struct temp;
-		temp.op = 0;
-		temp.l = curr_lvl;
-		temp.m = cx;
-		
 		block();
-		
-		// Go back and write the modifier
-		temp.op = code[proc_start].op;
-		code[proc_start] = temp;
 		
 		if( current_token->type != semicolonsym ) err(5);
 		get_next_t();
 	}
 	
-	// Call statement
+	// Go back and fix
+	code[jumpAddress].m = cx;
+	
+	// Space for variables
+	emit( inc, 0, numVars + 4 );
 	statement();
+	
+	symIndex -= numConsts + numVars + numProcs;
+	emit( opr, 0, RET );
+	
+	curr_lvl--;
 }
 
 // jerasimos
 void statement() {
 	
+	int loc, tempAddr1, tempAddr2, tempcx;
+	
+	// Assignment
 	if(current_token->type == identsym){
+		
+		loc = find_symbol(current_token->string);
 		get_next_t();
-		if( current_token->type != becomessym ) err(19) ; // raise error
+		
+		if( current_token->type != becomessym ) err(19);
 		get_next_t();
 		expression();
-		return;
 		
+        if ( symbol_table[loc].kind != 2 ) err(30); // Not var
+		
+		emit( sto, curr_lvl - symbol_table[loc].level, symbol_table[loc].addr);
+		
+		return;
+	
+	// Call procedure
 	} else if( current_token->type == callsym ) {
-		get_next_t();
-		if( current_token->type != identsym )err(14) ; // raise error
-		get_next_t();
-		return;
 		
+		get_next_t();
+		if( current_token->type != identsym )err(14);
+		get_next_t();
+		
+		loc = find_symbol(current_token->string);
+        if ( symbol_table[loc].kind != 3 ) err(30); // Not proc
+		
+		emit( cal, curr_lvl - symbol_table[loc].level, symbol_table[loc].addr );
+		
+		return;
+	
+	//Begin statement
 	} else if(current_token->type == beginsym){
+		
 		get_next_t();
 		statement();
+		
 		while(current_token->type == semicolonsym) {
 			get_next_t();
 			statement();
 		}
-		if(current_token->type != endsym) err(27); // raise error
-		get_next_t();
-		return;
 		
+		if(current_token->type != endsym) err(27);
+		get_next_t();
+		
+		return;
+	
+	// If
 	} else if(current_token->type == ifsym ){
+		
 		get_next_t();
 		condition();
-		if(current_token->type != thensym) err(16); // raise error
+		
+		if(current_token->type != thensym) err(16);
 		get_next_t();
+		
+		tempAddr1 = cx;
 		statement();
-		//get_next_t(); //semi colon?
+		
 		if(current_token->type == elsesym) {
+			
 			get_next_t();
+			tempcx = cx;
+			emit( jmp, 0, 0);
+			
+			code[tempAddr1].m = cx;
 			statement();
-		}
-		return;
+			code[tempcx].m = cx;
+		} else 
+			code[tempAddr1].m = cx;
 		
+		return;
+	
+	// While
 	} else if(current_token->type == whilesym) {
+		
+		tempAddr1 = cx;
 		get_next_t();
 		condition();
-		if( current_token->type != dosym ) err(18) ; // raise error
+		
+		tempAddr2 = cx;
+		
+		emit( jpc, 0, 0);
+		
+		if( current_token->type != dosym ) err(18);
 		get_next_t();
 		statement();
-		return;
 		
+		emit( jmp, 0, tempAddr1);
+		code[tempAddr2].m = cx;
+		
+		return;
+	
+	// Read
 	} else if(current_token->type == readsym ){
+		
 		get_next_t();
-		if(	current_token->type != identsym) err(26); // raise error
+		if(	current_token->type != identsym) err(26);
+		
+		loc = find_symbol(current_token->string);
+        if ( symbol_table[loc].kind != 2 ) err(30); // Not var
+		
+		emit( sio, 0, 2);
+		emit( sto, curr_lvl - symbol_table[loc].level, symbol_table[loc].addr);
+		
 		get_next_t();
 		return;
-		
+	
+	// Write
 	} else if(current_token->type == writesym){
+		
 		get_next_t();
-		if(	current_token->type != identsym) err(26); // raise error
+		if(	current_token->type != identsym) err(26);
+		
+		loc = find_symbol(current_token->string);
+        if ( symbol_table[loc].kind != 2 ) err(30); // Not var
+		
+		emit( lod, curr_lvl - symbol_table[loc].level, symbol_table[loc].addr);
+		emit( sio, 0, 1);
+		
 		get_next_t();
 		return;
 	} else {
@@ -298,128 +378,140 @@ void statement() {
 	}
 }
 
-// jerasimos 
+// Condition
 void condition(){
+	
 	if(	current_token->type == oddsym){
+		
 		get_next_t();
 		expression();
+		
+		emit( opr, 0, ODD );
+		
 		return;
+		
 	}else{
+		
 		expression();
-		if( !rel_op() ) ; // error raised in rel_op()
+		
+		int opCode = rel_op();
 		get_next_t();
+		
 		expression();
+		emit( opCode, curr_lvl - 1, curr_lvl);
+		
 		return;
 	}
 
 }
 
-// jerasimos
 // Check that current_token is a relation symbol. If not, raise an error.
-bool rel_op(){
+int rel_op(){
 	
 	switch(current_token->type){
 
 	case eqsym : // '='
-		return true;
+		return EQL;
 	
-	case neqsym : //'<>' "This is correct" - Austin
-		return true;
+	case neqsym : //'<>'
+		return NEG;
 	
 	case lessym : // '<'
-		return true;
+		return LSS;
 	
 	case leqsym : // '<='
-		return true;
+		return LEQ;
 
 	case gtrsym : // '>'
-		return true;
+		return GTR;
 	
 	case geqsym : // '>='
-		return true;
+		return GEQ;
 
 	default :
 		err(20);
-		return false;
-		//error sysntax error, need Relational Operators
-		// error msg and exit() code need here!!
+		return 0;
 	}
 }
 
-// jerasimos
-void term(){
+// Term
+void term() {
+	
 	int mulop;
 	factor();
-	while(current_token->type == multsym || current_token->type == slashsym){
+	
+	while(current_token->type == multsym || current_token->type == slashsym) {
+		
 		mulop = current_token->type;
 		get_next_t();
 		factor();
+		
 		if(mulop == multsym)
-			emit(opr, 0, MUL); // correct me if im wrong but we needed to emit these?
-								// -Tarek
+			emit(opr, 0, MUL);
 		else
 			emit(opr, 0, DIV);
 	}
 	
 }
 
-// Tarek
-void factor(){
-	int i;
+// Factor
+void factor() {
+	
+	int i, loc;
+	
 	if(current_token->type == identsym){
 		
 		get_next_t();
 		
-		// use this to fetch the value of the identifier from the 
-		// symbol table
-		for(i = 0; i< num_symbols; i++){
-			if(symbol_table[i].name == current_token->string){
-				
-				// if its a constant we emit a lit
-				if(symbol_table[i].kind == 1){
-					emit(lit, 0, symbol_table[i].val);
-					break;
-				}
-				
-				// otherwise we load the address of the factor and emit it in the virtual
-				// mach.
-				else{
-					emit(lod, curr_lvl-symbol_table[i].level, symbol_table[i].addr);
-					break;
-				}		
-			}	
+		loc = find_symbol(current_token->string);
+		
+		// Const
+        if( symbol_table[loc].kind == 1 ) {
+			emit( lod, curr_lvl - symbol_table[loc].level, symbol_table[loc].addr);
 		}
 		
-		//get_next_t();
+		// Var
+		else if( symbol_table[loc].kind == 2 ) {
+			emit( lit, 0, symbol_table[loc].val );
+		}
+		
+		else
+			err(30);
+		
+		get_next_t();
 	}
 	
-	// otherwise if we find a numbersym, emit the number literal
-	else if(current_token->type == numbersym){
+	// Number
+	else if(current_token->type == numbersym) {
+		
 		get_next_t();
+		
+		loc = find_symbol(current_token->string);
+		
 		emit(lit, 0, current_token->type);
-		//get_next_t();
-	}
-	
-	
-	// or if we find a left paren, evaluate it as a new expression
-	else if(current_token->type == lparentsym){
 		get_next_t();
-		expression(); // possible edit after experssion() finished
-		
-		if(current_token->type != rparentsym){
-			err(13);
-		}
-		
-		//get_next_t();	
 	}
 	
-	// otherwise we have an error
+	
+	// Or if we find a left paren, evaluate it as a new expression
+	else if(current_token->type == lparentsym) {
+		
+		get_next_t();
+		expression();
+		
+		if(current_token->type != rparentsym) err(13);
+		
+		get_next_t();	
+	}
+	
+	// Otherwise we have an error
 	else{
-		err(30);
+		printf("Error\n");
+		exit(0);
 	}
 }
 
-
+// Expression
 // jerasimos
 // Added an emit here - Gabriela  
 void expression(){
@@ -562,12 +654,11 @@ void err(int n){
 	}
 }
 
-// Tarek
+
 void emit(int op, int l, int m){
 	
 	// send an error saying too large
-	if(cx > MAX_CODE_LENGTH)
-		err(25);
+	if(cx > MAX_CODE_LENGTH) err(30);
 	else
 	{
 		code[cx].op = op; 	// opcode
@@ -578,12 +669,17 @@ void emit(int op, int l, int m){
 	
 }
 
-// Add constants or variables to the symbol table (procedures not in tiny PL/0)
+// Add constants or variables to the symbol table
 // If the symbol already exists, raise error
-// jonathan
+// k = 1 const; k = 2 variable; k = 3 procedure.
 void add_symbol(int k, char *name, int num, int level, int modifier){
-	int i = 0;
-	for ( i=0; i<num_symbols; i++) {
+	
+	// Do not use index zero
+	symIndex++;
+	
+	// Check if already in symbol table
+	int i;
+	for ( i=1; i < num_symbols; i++) {
 		symbol s = symbol_table[i];
 		
 		// Check name and level
@@ -601,11 +697,23 @@ void add_symbol(int k, char *name, int num, int level, int modifier){
 	s->val = num;
 	s->level = level;
 	s->addr = modifier;
-
-	symbol_table[num_symbols] = *s;
+	
+	// Added to table
+	symbol_table[symIndex] = *s;
 	num_symbols++;
 }
 
+// Find symbol if present
+int find_symbol( char* ident ) {
+	
+	int i;
+	for( i = 1; i < symIndex; i++ ) {
+		if( strcmp( symbol_table[i].name, ident ) )
+			return i;
+	}
+	
+	err(30);
+}
 
 
 // we can use a tostring method to make the tokens into the names needed for parser func
@@ -716,8 +824,6 @@ char* tokenToString(int token){
 
 // Main
 int main( int argc, char** argv ) {
-
-	// Austin - "Working on this at the moment"
 	
 	argc--; *argv++; //dont need first argument (executable name)
 	char* inputFile = *argv++;
