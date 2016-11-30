@@ -421,13 +421,20 @@ void factor(){
 
 
 // jerasimos
+// Added an emit here - Gabriela  
 void expression(){
+	int plusop;
 	if(current_token->type == plussym || current_token->type == minussym)
 		get_next_t();
 	term();
 	while(current_token->type == plussym || current_token->type == minussym){
+		plusop = current_token->type;
 		get_next_t();
 		term();
+		if(plusop == plussym)  
+			emit(opr, 0, ADD); 
+		else
+			emit(opr, 0, SUB);
 	}
 }
 
