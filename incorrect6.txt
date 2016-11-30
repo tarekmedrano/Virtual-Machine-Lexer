@@ -1,0 +1,12 @@
+var n
+procedure mino
+var ans;
+begin
+	ans := n;
+	n := n - 1;
+end;
+begin
+	n:=3;
+	call fact;
+	write f;
+end.
