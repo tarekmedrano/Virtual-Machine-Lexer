@@ -1,5 +1,0 @@
-var x;
-const p = 2;
-if 3 > p then
-	x := p
-end.

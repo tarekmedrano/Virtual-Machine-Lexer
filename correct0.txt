@@ -1,6 +1,0 @@
-var x, w;
-begin
-    x := w;
-    w := 3;
-    if w > x then w := w + 1;
-end.

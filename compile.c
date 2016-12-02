@@ -142,7 +142,7 @@ void program(){
 	if( current_token->type != periodsym )
 		err(9);
 	
-	emit( sio, 0, 3 );
+	emit( sio, 0, 2 );
 }
 
 // Austin
@@ -154,7 +154,7 @@ void block(){
 	int numVars = 0, numConsts = 0, numProcs = 0;
 	char ident[100];
 	
-	// Change later
+	// JMP address is changed later
 	emit( jmp, 0, 0 );
 	
 	// Constant declaration
@@ -193,12 +193,13 @@ void block(){
 	// Variable declaration
 	// EBSF: "var" <id> { "," <id> } ";"
 	if( current_token->type == varsym ) {
+	
 		// Loop if commasym
 		while(1) {
 			get_next_t();
 			if( current_token->type != identsym ) err(4);
 			
-			add_symbol(2, current_token->string, 0, curr_lvl, 0);
+			add_symbol(2, current_token->string, 0, curr_lvl, numVars + 4);
 			get_next_t();
 			numVars++;
 			
@@ -206,6 +207,7 @@ void block(){
 		}
 		
 		//emit( INC, 0, 4 + num_symbols );
+		
 		
 		if( current_token->type != semicolonsym ) err(5);
 		get_next_t();
@@ -241,7 +243,9 @@ void block(){
 	statement();
 	
 	symIndex -= numConsts + numVars + numProcs;
-	emit( opr, 0, RET );
+	if (jumpAddress!=0) {
+		emit( opr, 0, RET );
+	}
 	
 	curr_lvl--;
 }
@@ -317,9 +321,11 @@ void statement() {
 		get_next_t();
 		
 		tempAddr1 = cx;
+		emit( jpc, 0, 0);
 		statement();
 		
 		code[tempAddr1].m = cx;
+		
 		
 		return;
 	
@@ -356,7 +362,7 @@ void statement() {
         	err(ERROR_NOT_VAR); // Not var
     	}
 		
-		emit( sio, 0, 2);
+		emit( sio, 0, 1);
 		emit( sto, curr_lvl - symbol_table[loc].level, symbol_table[loc].addr);
 		
 		get_next_t();
@@ -375,7 +381,7 @@ void statement() {
     	}
 		
 		emit( lod, curr_lvl - symbol_table[loc].level, symbol_table[loc].addr);
-		emit( sio, 0, 1);
+		emit( sio, 0, 0);
 		
 		get_next_t();
 		
@@ -404,7 +410,7 @@ void condition(){
 		get_next_t();
 		
 		expression();
-		emit( opCode, curr_lvl - 1, curr_lvl);
+		emit( opr, 0, opCode);
 		
 		return;
 	}
@@ -477,7 +483,7 @@ void factor() {
 		
 		// Var
 		else if( symbol_table[loc].kind == 2 ) {
-			emit( lit, 0, symbol_table[loc].val );
+			emit( lod, curr_lvl - symbol_table[loc].level, symbol_table[loc].addr);
 		}
 		
 		else {
@@ -489,10 +495,9 @@ void factor() {
 	
 	// Number
 	else if(current_token->type == numbersym) {
-		
+		int val = atoi(current_token->string);
 		get_next_t();
-		
-		emit(lit, 0, current_token->type);
+		emit(lit, 0, val);
 		//get_next_t();
 	}
 	

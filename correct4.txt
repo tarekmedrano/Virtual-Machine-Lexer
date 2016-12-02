@@ -1,9 +1,0 @@
-var x, w;
-begin
-    x := w;
-    read w;
-    if w > x then
-        w := w + 1;
-    write w;
-    w := w + 1;
-end.
