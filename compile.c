@@ -16,6 +16,11 @@
 #define MAX_CODE_LENGTH 500
 #define MAX_SYMBOL_TABLE_SIZE 10000
 
+#define ERROR_SEMICOLON 17
+#define ERROR_NOT_CONST 30
+#define ERROR_NOT_VAR   31
+#define ERROR_NOT_PROC  32
+
 typedef enum
 {
     hlt,
@@ -147,7 +152,7 @@ void block(){
 	curr_lvl++;
 	int jumpAddress = cx;
 	int numVars = 0, numConsts = 0, numProcs = 0;
-	char* ident;
+	char ident[100];
 	
 	// Change later
 	emit( jmp, 0, 0 );
@@ -177,6 +182,7 @@ void block(){
 			add_symbol(1, ident, val, 0, 0);
 			
 			get_next_t();
+			
 			if( current_token->type != commasym ) break;
 		}
 		
@@ -187,23 +193,16 @@ void block(){
 	// Variable declaration
 	// EBSF: "var" <id> { "," <id> } ";"
 	if( current_token->type == varsym ) {
-		
-		
-		get_next_t();
-		if( current_token->type != identsym ) err(4);
-		
-		add_symbol(2, current_token->string, 0, curr_lvl, 0);
-		get_next_t();
-		numVars++;
-		
 		// Loop if commasym
-		while( current_token->type == commasym ) {
+		while(1) {
 			get_next_t();
 			if( current_token->type != identsym ) err(4);
 			
 			add_symbol(2, current_token->string, 0, curr_lvl, 0);
 			get_next_t();
 			numVars++;
+			
+			if ( current_token->type != commasym ) break;
 		}
 		
 		//emit( INC, 0, 4 + num_symbols );
@@ -215,13 +214,13 @@ void block(){
 	// Procedure
 	// EBSF: "proc" { <id> ";" <block> ";" }
 	while( current_token->type == procsym ) {
-		
+
 		numProcs++;
-		
 		get_next_t();
-		if( current_token->type != identsym ) err(4);
 		
+		if( current_token->type != identsym ) err(4);
 		strcpy(ident,current_token->string);
+		
 		add_symbol( 3, ident, 0, curr_lvl, cx );
 		
 		get_next_t();
@@ -259,10 +258,13 @@ void statement() {
 		get_next_t();
 		
 		if( current_token->type != becomessym ) err(19);
+		
 		get_next_t();
 		expression();
 		
-        if ( symbol_table[loc].kind != 2 ) err(30); // Not var
+        if ( symbol_table[loc].kind != 2 ) {
+        	err(ERROR_NOT_VAR); // Not var
+    	}
 		
 		emit( sto, curr_lvl - symbol_table[loc].level, symbol_table[loc].addr);
 		
@@ -272,11 +274,15 @@ void statement() {
 	} else if( current_token->type == callsym ) {
 		
 		get_next_t();
-		if( current_token->type != identsym )err(14);
+		if( current_token->type != identsym ) err(14);
+		loc = find_symbol(current_token->string);
+		
 		get_next_t();
 		
-		loc = find_symbol(current_token->string);
-        if ( symbol_table[loc].kind != 3 ) err(30); // Not proc
+		
+        if ( symbol_table[loc].kind != 3 ) {
+        	err(ERROR_NOT_PROC); // Not proc
+    	}
 		
 		emit( cal, curr_lvl - symbol_table[loc].level, symbol_table[loc].addr );
 		
@@ -285,15 +291,18 @@ void statement() {
 	//Begin statement
 	} else if(current_token->type == beginsym){
 		
-		get_next_t();
-		statement();
-		
-		while(current_token->type == semicolonsym) {
+		while(1) {
+			
 			get_next_t();
 			statement();
+			
+			if (current_token->type == endsym)
+				break;
+			
+			if (current_token->type != semicolonsym) err(91);
+			
 		}
 		
-		if(current_token->type != endsym) err(27);
 		get_next_t();
 		
 		return;
@@ -310,17 +319,7 @@ void statement() {
 		tempAddr1 = cx;
 		statement();
 		
-		if(current_token->type == elsesym) {
-			
-			get_next_t();
-			tempcx = cx;
-			emit( jmp, 0, 0);
-			
-			code[tempAddr1].m = cx;
-			statement();
-			code[tempcx].m = cx;
-		} else 
-			code[tempAddr1].m = cx;
+		code[tempAddr1].m = cx;
 		
 		return;
 	
@@ -339,6 +338,8 @@ void statement() {
 		get_next_t();
 		statement();
 		
+		if (current_token->type != semicolonsym) err(ERROR_SEMICOLON);
+		
 		emit( jmp, 0, tempAddr1);
 		code[tempAddr2].m = cx;
 		
@@ -351,12 +352,15 @@ void statement() {
 		if(	current_token->type != identsym) err(26);
 		
 		loc = find_symbol(current_token->string);
-        if ( symbol_table[loc].kind != 2 ) err(30); // Not var
+        if ( symbol_table[loc].kind != 2 ) {
+        	err(ERROR_NOT_VAR); // Not var
+    	}
 		
 		emit( sio, 0, 2);
 		emit( sto, curr_lvl - symbol_table[loc].level, symbol_table[loc].addr);
 		
 		get_next_t();
+		
 		return;
 	
 	// Write
@@ -366,16 +370,18 @@ void statement() {
 		if(	current_token->type != identsym) err(26);
 		
 		loc = find_symbol(current_token->string);
-        if ( symbol_table[loc].kind != 2 ) err(30); // Not var
+        if ( symbol_table[loc].kind != 2 ) {
+        	err(ERROR_NOT_VAR); // Not var
+    	}
 		
 		emit( lod, curr_lvl - symbol_table[loc].level, symbol_table[loc].addr);
 		emit( sio, 0, 1);
 		
 		get_next_t();
-		return;
-	} else {
 		
+		return;
 	}
+	
 }
 
 // Condition
@@ -460,10 +466,9 @@ void factor() {
 	int i, loc;
 	
 	if(current_token->type == identsym){
+		loc = find_symbol(current_token->string);
 		
 		get_next_t();
-		
-		loc = find_symbol(current_token->string);
 		
 		// Const
         if( symbol_table[loc].kind == 1 ) {
@@ -475,10 +480,11 @@ void factor() {
 			emit( lit, 0, symbol_table[loc].val );
 		}
 		
-		else
-			err(30);
+		else {
+			err(29);
+		}
 		
-		get_next_t();
+		//get_next_t();
 	}
 	
 	// Number
@@ -486,10 +492,8 @@ void factor() {
 		
 		get_next_t();
 		
-		loc = find_symbol(current_token->string);
-		
 		emit(lit, 0, current_token->type);
-		get_next_t();
+		//get_next_t();
 	}
 	
 	
@@ -506,8 +510,7 @@ void factor() {
 	
 	// Otherwise we have an error
 	else{
-		printf("Error\n");
-		exit(0);
+		err(28);
 	}
 }
 
@@ -533,7 +536,7 @@ void expression(){
 // Gets the next token in the tokenArray and advances the pointer
 void get_next_t() {
 	current_token = lex();
-	printf("%s \n",current_token->string);
+	//printf("%s \n",current_token->string);
 }
 
 // Gabriela, Terek, Austin
@@ -604,7 +607,7 @@ void err(int n){
 			printf("Error: then expected \n");
 			exit(0);
 		
-		case 17:
+		case ERROR_SEMICOLON:
 			printf("Error: Semicolon or } expected.\n");
 			exit(0);
 		
@@ -629,15 +632,15 @@ void err(int n){
 			exit(0);
 		
 		case 23:
-			printf("The preceding factor cannot begin with this symbol.\n");
+			printf("Error: The preceding factor cannot begin with this symbol.\n");
 			exit(0);
 		
 		case 24:
-			printf("An expression cannot begin with this symbol.\n");
+			printf("Error: An expression cannot begin with this symbol.\n");
 			exit(0);
 		
 		case 25:
-			printf("This number is too large.\n");
+			printf("Error: This number is too large.\n");
 			exit(0);
 			
 		case 26:
@@ -647,9 +650,29 @@ void err(int n){
 		case 27:
 			printf("Error: end expected.\n");
 			exit(0);
+			
+		case 28:
+			printf("Error: Identifier, number or expression expected.\n");
+			exit(0);
+			
+		case 29:
+			printf("Error: Constant or variable expected.\n");
+			exit(0);
+			
+		case ERROR_NOT_CONST:
+			printf("Error: Not a constant.\n");
+			exit(0);
+			
+		case ERROR_NOT_VAR:
+			printf("Error: Not a variable.\n");
+			exit(0);
+			
+		case ERROR_NOT_PROC:
+			printf("Error: Not a procedure.\n");
+			exit(0);
 		
 		default:
-			printf("Unknown error.\n");
+			printf("Unknown error %d.\n",n);
 			exit(0);
 	}
 }
@@ -679,13 +702,13 @@ void add_symbol(int k, char *name, int num, int level, int modifier){
 	
 	// Check if already in symbol table
 	int i;
-	for ( i=1; i < num_symbols; i++) {
+	for ( i=0; i < num_symbols; i++) {
 		symbol s = symbol_table[i];
 		
 		// Check name and level
 		if (strcmp(s.name,name) == 0) {
 			if(s.level == curr_lvl) {
-				printf("Symbol name already in use\n");
+				printf("Error: Symbol name already in use\n");
 				exit(0);
 			}
 		}
@@ -699,20 +722,22 @@ void add_symbol(int k, char *name, int num, int level, int modifier){
 	s->addr = modifier;
 	
 	// Added to table
-	symbol_table[symIndex] = *s;
+	symbol_table[num_symbols] = *s;
 	num_symbols++;
+	
 }
 
 // Find symbol if present
 int find_symbol( char* ident ) {
 	
 	int i;
-	for( i = 1; i < symIndex; i++ ) {
-		if( strcmp( symbol_table[i].name, ident ) )
+	for( i = 0; i < num_symbols; i++ ) {
+		if( strcmp( symbol_table[i].name, ident ) == 0 )
 			return i;
 	}
 	
-	err(30);
+	printf("Error: Symbol not found\n");
+	exit(0);
 }
 
 
@@ -826,9 +851,13 @@ char* tokenToString(int token){
 int main( int argc, char** argv ) {
 	
 	argc--; *argv++; //dont need first argument (executable name)
-	char* inputFile = *argv++;
-	char* outputFile = *argv++;
+	if (argc!=2) {
+		printf("Error: Enter <input> <output> as arguments\n");
+	} else {
+		char* inputFile = *argv++;
+		char* outputFile = *argv++;
 	
-	Parser(inputFile, outputFile);
+		Parser(inputFile, outputFile);
+	}
 
 }

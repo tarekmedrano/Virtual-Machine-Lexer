@@ -7,6 +7,6 @@ begin
 end;
 begin
 	n:=3;
-	call fact;
-	write f;
+	call mino;
+	write per;
 end.

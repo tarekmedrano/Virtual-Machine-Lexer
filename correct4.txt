@@ -3,8 +3,7 @@ begin
     x := w;
     read w;
     if w > x then
-        w := w + 1
-    else
-        e := x;
-    write w
+        w := w + 1;
+    write w;
+    w := w + 1;
 end.
